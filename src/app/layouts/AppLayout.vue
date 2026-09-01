@@ -3,12 +3,21 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 
 import { primaryNavigation } from '@/app/navigation'
+import { usePropertyStore } from '@/app/stores/propertyStore'
 import BaseSelect, { type SelectOption, type SelectValue } from '@/shared/ui/BaseSelect.vue'
 
 const route = useRoute()
+const propertyStore = usePropertyStore()
 const isNavigationOpen = ref(false)
-const selectedProperty = ref<SelectValue | null>(null)
-const propertyOptions: readonly SelectOption[] = []
+const propertyOptions = computed<readonly SelectOption[]>(() =>
+  propertyStore.properties.map((property) => ({ label: property.name, value: property.id })),
+)
+const selectedProperty = computed<SelectValue | null>({
+  get: () => propertyStore.selectedPropertyId,
+  set: (value) => {
+    if (typeof value === 'string') propertyStore.selectProperty(value)
+  },
+})
 const pageTitle = computed(() =>
   typeof route.meta.title === 'string' ? route.meta.title : 'Dashboard',
 )
@@ -21,7 +30,10 @@ function handleEscape(event: KeyboardEvent) {
 }
 
 watch(() => route.fullPath, closeNavigation)
-onMounted(() => window.addEventListener('keydown', handleEscape))
+onMounted(() => {
+  window.addEventListener('keydown', handleEscape)
+  void propertyStore.loadProperties()
+})
 onBeforeUnmount(() => window.removeEventListener('keydown', handleEscape))
 </script>
 
@@ -44,7 +56,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleEscape))
           >{{ item.label }}</RouterLink
         >
       </nav>
-      <div class="app-sidebar__footer">Portfolio foundation · Phase 2</div>
+      <div class="app-sidebar__footer">Portfolio foundation · Phase 3</div>
     </aside>
 
     <button
@@ -79,6 +91,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleEscape))
               aria-label="Property"
               :options="propertyOptions"
               placeholder="Select property"
+              :disabled="propertyStore.status === 'loading'"
             />
           </div>
           <RouterLink class="app-header__profile" to="/profile" aria-label="Open profile">
