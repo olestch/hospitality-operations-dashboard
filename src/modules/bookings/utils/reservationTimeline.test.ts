@@ -3,8 +3,11 @@ import { describe, expect, it } from 'vitest'
 import type { Booking } from '@/modules/bookings/types/booking'
 import {
   bookingOverlapsRange,
+  bookingsConflict,
   calculateReservationSummary,
+  createReservationViewData,
   filterReservationData,
+  findBookingConflicts,
   generateVisibleDays,
   getBookingSpan,
   groupDaysByMonth,
@@ -98,6 +101,78 @@ describe('booking geometry', () => {
   it('excludes cancelled bookings from occupancy', () => {
     expect(getBookingSpan({ ...booking, status: 'cancelled' }, range)).toBeNull()
   })
+
+  it('excludes a booking that checks out at the range start', () => {
+    const departing = { ...booking, checkIn: '2025-02-20', checkOut: range.start }
+    expect(bookingOverlapsRange(departing, range)).toBe(false)
+    expect(getBookingSpan(departing, range)).toBeNull()
+  })
+
+  it('places bookings that start at either visible boundary', () => {
+    expect(getBookingSpan({ ...booking, checkIn: range.start }, range)).toMatchObject({
+      startColumn: 1,
+    })
+    expect(
+      getBookingSpan({ ...booking, checkIn: range.end, checkOut: '2025-03-06' }, range),
+    ).toMatchObject({ startColumn: 9, span: 1 })
+  })
+
+  it('includes the final visible night when checkout is the day after the range', () => {
+    expect(
+      getBookingSpan({ ...booking, checkIn: '2025-03-03', checkOut: '2025-03-06' }, range),
+    ).toMatchObject({ startColumn: 7, span: 3, clippedAtEnd: false })
+  })
+
+  it('keeps a one-night booking visible', () => {
+    expect(
+      getBookingSpan({ ...booking, checkIn: '2025-03-01', checkOut: '2025-03-02' }, range),
+    ).toMatchObject({ startColumn: 5, span: 1 })
+  })
+
+  it('clips a booking spanning both visible boundaries', () => {
+    expect(
+      getBookingSpan({ ...booking, checkIn: '2025-02-20', checkOut: '2025-03-10' }, range),
+    ).toMatchObject({
+      startColumn: 1,
+      span: 9,
+      clippedAtStart: true,
+      clippedAtEnd: true,
+    })
+  })
+
+  it('treats a reversed range as empty', () => {
+    const reversedRange = { start: '2025-03-05', end: '2025-03-01' }
+    expect(generateVisibleDays(reversedRange, '2025-03-03')).toEqual([])
+    expect(bookingOverlapsRange(booking, reversedRange)).toBe(false)
+    expect(calculateReservationSummary(rooms, [booking], reversedRange)).toMatchObject({
+      activeBookings: 0,
+      occupancyRate: 0,
+      arrivals: 0,
+      departures: 0,
+    })
+  })
+})
+
+describe('booking conflicts', () => {
+  it('detects overlapping active bookings in the same room', () => {
+    const overlapping = { ...booking, id: 'booking-2', checkIn: '2025-03-01' }
+    expect(bookingsConflict(booking, overlapping)).toBe(true)
+    expect(findBookingConflicts([booking, overlapping])).toEqual([
+      { first: booking, second: overlapping },
+    ])
+  })
+
+  it('allows adjacent, cancelled, and different-room bookings', () => {
+    expect(
+      bookingsConflict(booking, { ...booking, id: 'adjacent', checkIn: booking.checkOut }),
+    ).toBe(false)
+    expect(bookingsConflict(booking, { ...booking, id: 'cancelled', status: 'cancelled' })).toBe(
+      false,
+    )
+    expect(bookingsConflict(booking, { ...booking, id: 'other-room', roomId: 'room-2' })).toBe(
+      false,
+    )
+  })
 })
 
 describe('reservation filters and summary', () => {
@@ -123,5 +198,58 @@ describe('reservation filters and summary', () => {
     expect(summary.sellableRoomDays).toBe(9)
     expect(summary.occupiedRoomDays).toBe(4)
     expect(summary.occupancyRate).toBeCloseTo(4 / 9)
+  })
+
+  it('deduplicates occupied room-days and never exceeds full occupancy', () => {
+    const overlapping = { ...booking, id: 'booking-2', checkIn: '2025-03-01' }
+    const summary = calculateReservationSummary([rooms[0]!], [booking, overlapping], range)
+    expect(summary.occupiedRoomDays).toBe(4)
+    expect(summary.occupancyRate).toBeLessThanOrEqual(1)
+  })
+
+  it('returns zero occupancy when no rooms are sellable', () => {
+    const summary = calculateReservationSummary([rooms[1]!], [booking], range)
+    expect(summary.sellableRoomDays).toBe(0)
+    expect(summary.occupancyRate).toBe(0)
+  })
+
+  it('excludes cancelled bookings from arrivals and departures', () => {
+    const summary = calculateReservationSummary(
+      [rooms[0]!],
+      [{ ...booking, status: 'cancelled' }],
+      range,
+    )
+    expect(summary.arrivals).toBe(0)
+    expect(summary.departures).toBe(0)
+  })
+
+  it('keeps operational summary bookings independent of status and source filters', () => {
+    const second = {
+      ...booking,
+      id: 'booking-2',
+      roomId: 'room-2',
+      source: 'Expedia' as const,
+      status: 'checked-in' as const,
+    }
+    const view = createReservationViewData(rooms, [booking, second], {
+      status: 'confirmed',
+      source: 'Direct',
+      roomType: null,
+    })
+    expect(view.renderedBookings.map((item) => item.id)).toEqual(['booking-1'])
+    expect(view.operationalBookings.map((item) => item.id)).toEqual(['booking-1', 'booking-2'])
+  })
+
+  it('applies room type to both operational bookings and room capacity', () => {
+    const second = { ...booking, id: 'booking-2', roomId: 'room-2' }
+    const view = createReservationViewData(rooms, [booking, second], {
+      status: null,
+      source: null,
+      roomType: 'Standard',
+    })
+    const summary = calculateReservationSummary(view.rooms, view.operationalBookings, range)
+    expect(view.rooms.map((room) => room.id)).toEqual(['room-1'])
+    expect(view.operationalBookings.map((item) => item.id)).toEqual(['booking-1'])
+    expect(summary.sellableRoomDays).toBe(9)
   })
 })

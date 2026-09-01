@@ -1,6 +1,7 @@
 import type { HospitalityDataProvider } from '@/data/HospitalityDataProvider'
 import type { RevenueMetricFilters } from '@/modules/analytics/types/revenue'
 import type { BookingFilters } from '@/modules/bookings/types/booking'
+import { bookingDatesOverlapRange } from '@/modules/bookings/utils/reservationTimeline'
 import type { InventoryFilters } from '@/modules/inventory/types/inventory'
 import type { InspectionFilters } from '@/modules/quality/types/inspection'
 import { mockBookings } from '@/mocks/data/bookings'
@@ -17,7 +18,11 @@ const MOCK_DELAY_MS = 45
 if (import.meta.env.DEV) validateMockData()
 
 function overlapsRange(start: string, end: string, dateFrom?: string, dateTo?: string): boolean {
-  return (!dateTo || start <= dateTo) && (!dateFrom || end >= dateFrom)
+  if (!dateFrom && !dateTo) return true
+  return bookingDatesOverlapRange(start, end, {
+    start: dateFrom ?? start,
+    end: dateTo ?? end,
+  })
 }
 
 function isWithinRange(date: string, dateFrom?: string, dateTo?: string): boolean {

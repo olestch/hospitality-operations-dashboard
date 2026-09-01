@@ -50,6 +50,17 @@ export interface ReservationSummary {
   sellableRoomDays: number
 }
 
+export interface ReservationViewData {
+  rooms: Room[]
+  operationalBookings: Booking[]
+  renderedBookings: Booking[]
+}
+
+export interface BookingConflict {
+  first: Booking
+  second: Booking
+}
+
 function toTimestamp(date: string): number {
   return Date.parse(`${date}T00:00:00Z`)
 }
@@ -78,6 +89,19 @@ export function generateVisibleDays(range: DateRange, demoDate: string): Timelin
   })
 }
 
+export function isValidDateRange(range: DateRange): boolean {
+  return range.start <= range.end
+}
+
+export function bookingDatesOverlapRange(
+  checkIn: string,
+  checkOut: string,
+  range: DateRange,
+): boolean {
+  if (!isValidDateRange(range)) return false
+  return checkIn < addDays(range.end, 1) && checkOut > range.start
+}
+
 export function groupDaysByMonth(days: readonly TimelineDay[]): TimelineMonthGroup[] {
   const groups: TimelineMonthGroup[] = []
 
@@ -104,12 +128,48 @@ export function groupDaysByMonth(days: readonly TimelineDay[]): TimelineMonthGro
 }
 
 export function bookingOverlapsRange(booking: Booking, range: DateRange): boolean {
-  const rangeEndExclusive = addDays(range.end, 1)
   return (
     booking.status !== 'cancelled' &&
-    booking.checkIn < rangeEndExclusive &&
-    booking.checkOut > range.start
+    bookingDatesOverlapRange(booking.checkIn, booking.checkOut, range)
   )
+}
+
+export function bookingsConflict(first: Booking, second: Booking): boolean {
+  return (
+    first.roomId === second.roomId &&
+    first.status !== 'cancelled' &&
+    second.status !== 'cancelled' &&
+    first.checkIn < second.checkOut &&
+    second.checkIn < first.checkOut
+  )
+}
+
+export function findBookingConflicts(bookings: readonly Booking[]): BookingConflict[] {
+  const conflicts: BookingConflict[] = []
+  const bookingsByRoom = indexBookingsByRoom(
+    bookings.filter((booking) => booking.status !== 'cancelled'),
+  )
+
+  for (const roomBookings of bookingsByRoom.values()) {
+    const sortedBookings = [...roomBookings].sort((first, second) =>
+      first.checkIn.localeCompare(second.checkIn),
+    )
+    for (let firstIndex = 0; firstIndex < sortedBookings.length; firstIndex += 1) {
+      const first = sortedBookings[firstIndex]
+      if (!first) continue
+      for (
+        let secondIndex = firstIndex + 1;
+        secondIndex < sortedBookings.length;
+        secondIndex += 1
+      ) {
+        const second = sortedBookings[secondIndex]
+        if (!second || second.checkIn >= first.checkOut) break
+        if (bookingsConflict(first, second)) conflicts.push({ first, second })
+      }
+    }
+  }
+
+  return conflicts
 }
 
 export function getBookingSpan(booking: Booking, range: DateRange): BookingSpan | null {
@@ -168,6 +228,29 @@ export function filterReservationData(
       (!filters.source || booking.source === filters.source),
   )
   return { rooms: filteredRooms, bookings: filteredBookings }
+}
+
+export function createReservationViewData(
+  rooms: readonly Room[],
+  bookings: readonly Booking[],
+  filters: BookingGridFilters,
+): ReservationViewData {
+  const operationalData = filterReservationData(rooms, bookings, {
+    roomType: filters.roomType,
+    source: null,
+    status: null,
+  })
+  const renderedBookings = operationalData.bookings.filter(
+    (booking) =>
+      (!filters.status || booking.status === filters.status) &&
+      (!filters.source || booking.source === filters.source),
+  )
+
+  return {
+    rooms: operationalData.rooms,
+    operationalBookings: operationalData.bookings,
+    renderedBookings,
+  }
 }
 
 export function calculateReservationSummary(

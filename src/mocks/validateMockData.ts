@@ -1,4 +1,5 @@
 import { mockBookings } from '@/mocks/data/bookings'
+import { findBookingConflicts } from '@/modules/bookings/utils/reservationTimeline'
 import { mockInspectionDetails, mockInspections } from '@/mocks/data/inspections'
 import { mockInventory } from '@/mocks/data/inventory'
 import { mockProperties, mockRooms } from '@/mocks/data/properties'
@@ -30,6 +31,13 @@ export function validateMockData(): void {
     assert(room.propertyId === booking.propertyId, `${booking.id} room belongs to another property`)
     assert(booking.checkIn < booking.checkOut, `${booking.id} has an invalid date range`)
     assert(booking.paidAmount <= booking.totalAmount, `${booking.id} paid amount exceeds total`)
+  }
+
+  for (const conflict of findBookingConflicts(mockBookings)) {
+    assert(
+      false,
+      `${conflict.first.id} overlaps ${conflict.second.id} in room ${conflict.first.roomId}`,
+    )
   }
 
   for (const metric of mockRevenueMetrics) {

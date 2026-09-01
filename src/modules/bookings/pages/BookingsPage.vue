@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import { usePropertyStore } from '@/app/stores/propertyStore'
 import BookingDetailModal from '@/modules/bookings/components/BookingDetailModal.vue'
@@ -38,30 +38,43 @@ const {
 } = storeToRefs(bookingsStore)
 const selectedBooking = ref<Booking | null>(null)
 
-const statusOptions: readonly SelectOption[] = [
-  { label: 'Confirmed', value: 'confirmed' },
-  { label: 'Checked in', value: 'checked-in' },
-  { label: 'Checked out', value: 'checked-out' },
-]
-const sourceOptions: readonly SelectOption[] = [
+const bookingStatuses = [
+  'confirmed',
+  'checked-in',
+  'checked-out',
+] as const satisfies readonly BookingStatus[]
+const bookingSources = [
   'Direct',
   'Booking.com',
   'Expedia',
   'Corporate',
-].map((source) => ({ label: source, value: source }))
+] as const satisfies readonly BookingSource[]
+const statusLabels: Record<(typeof bookingStatuses)[number], string> = {
+  confirmed: 'Confirmed',
+  'checked-in': 'Checked in',
+  'checked-out': 'Checked out',
+}
+const statusOptions: readonly SelectOption[] = bookingStatuses.map((status) => ({
+  label: statusLabels[status],
+  value: status,
+}))
+const sourceOptions: readonly SelectOption[] = bookingSources.map((source) => ({
+  label: source,
+  value: source,
+}))
 const roomTypeOptions = computed<readonly SelectOption[]>(() =>
   roomTypes.value.map((type) => ({ label: type, value: type })),
 )
 const statusModel = computed<SelectValue | null>({
   get: () => statusFilter.value,
   set: (value) => {
-    statusFilter.value = typeof value === 'string' ? (value as BookingStatus) : null
+    statusFilter.value = bookingStatuses.find((status) => status === value) ?? null
   },
 })
 const sourceModel = computed<SelectValue | null>({
   get: () => sourceFilter.value,
   set: (value) => {
-    sourceFilter.value = typeof value === 'string' ? (value as BookingSource) : null
+    sourceFilter.value = bookingSources.find((source) => source === value) ?? null
   },
 })
 const roomTypeModel = computed<SelectValue | null>({
@@ -88,6 +101,8 @@ const selectedRoomName = computed(
     gridRows.value.find((row) => row.room.id === selectedBooking.value?.roomId)?.room.name ??
     'Unknown room',
 )
+
+watch(() => propertyStore.selectedPropertyId, closeBooking)
 
 function formatDate(value: string): string {
   return rangeFormatter.format(new Date(`${value}T00:00:00Z`))
@@ -204,7 +219,12 @@ function closeBooking(): void {
         />
       </div>
       <BaseCard class="reservation-mobile">
-        <MobileBookingList :bookings="visibleBookings" :rows="gridRows" @select="selectBooking" />
+        <MobileBookingList
+          :bookings="visibleBookings"
+          :rows="gridRows"
+          :range-start="visibleRange.start"
+          @select="selectBooking"
+        />
       </BaseCard>
     </template>
 
@@ -284,6 +304,9 @@ function closeBooking(): void {
 }
 .reservation-mobile {
   display: none;
+}
+.reservation-desktop {
+  min-width: 0;
 }
 .sr-only {
   position: absolute;

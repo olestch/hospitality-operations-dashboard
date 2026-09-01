@@ -9,11 +9,15 @@ import {
   bookingOverlapsRange,
   calculateReservationSummary,
   createReservationGrid,
-  filterReservationData,
+  createReservationViewData,
   generateVisibleDays,
   groupDaysByMonth,
-  type DateRange,
 } from '@/modules/bookings/utils/reservationTimeline'
+import {
+  createRangeStarts,
+  createVisibleRange,
+  getAdjacentRangeStart,
+} from '@/modules/bookings/utils/reservationRange'
 import { DEMO_DATE, DEMO_PERIOD } from '@/mocks/demoPeriod'
 import { getRooms } from '@/shared/api/propertiesRepository'
 import type { Room } from '@/shared/types/property'
@@ -21,17 +25,11 @@ import type { RequestStatus } from '@/shared/types/request'
 
 const VISIBLE_DAY_COUNT = 28
 const INITIAL_RANGE_START = addDays(DEMO_DATE, -13)
-const LATEST_RANGE_START = addDays(DEMO_PERIOD.end, -(VISIBLE_DAY_COUNT - 1))
-
-function createRange(start: string): DateRange {
-  return { start, end: addDays(start, VISIBLE_DAY_COUNT - 1) }
-}
-
-function clampRangeStart(start: string): string {
-  if (start < DEMO_PERIOD.start) return DEMO_PERIOD.start
-  if (start > LATEST_RANGE_START) return LATEST_RANGE_START
-  return start
-}
+const RANGE_STARTS = createRangeStarts({
+  period: DEMO_PERIOD,
+  preferredStart: INITIAL_RANGE_START,
+  visibleDayCount: VISIBLE_DAY_COUNT,
+})
 
 export const useBookingsStore = defineStore('bookings', () => {
   const propertyStore = usePropertyStore()
@@ -45,11 +43,11 @@ export const useBookingsStore = defineStore('bookings', () => {
   const roomTypeFilter = ref<string | null>(null)
   let latestRequest = 0
 
-  const visibleRange = computed(() => createRange(rangeStart.value))
+  const visibleRange = computed(() => createVisibleRange(rangeStart.value, VISIBLE_DAY_COUNT))
   const visibleDays = computed(() => generateVisibleDays(visibleRange.value, DEMO_DATE))
   const monthGroups = computed(() => groupDaysByMonth(visibleDays.value))
-  const filteredData = computed(() =>
-    filterReservationData(rooms.value, bookings.value, {
+  const reservationView = computed(() =>
+    createReservationViewData(rooms.value, bookings.value, {
       status: statusFilter.value,
       source: sourceFilter.value,
       roomType: roomTypeFilter.value,
@@ -57,20 +55,20 @@ export const useBookingsStore = defineStore('bookings', () => {
   )
   const gridRows = computed(() =>
     createReservationGrid(
-      filteredData.value.rooms,
-      filteredData.value.bookings,
+      reservationView.value.rooms,
+      reservationView.value.renderedBookings,
       visibleRange.value,
     ),
   )
   const visibleBookings = computed(() =>
-    filteredData.value.bookings
+    reservationView.value.renderedBookings
       .filter((booking) => bookingOverlapsRange(booking, visibleRange.value))
       .sort((first, second) => first.checkIn.localeCompare(second.checkIn)),
   )
   const summary = computed(() =>
     calculateReservationSummary(
-      filteredData.value.rooms,
-      filteredData.value.bookings,
+      reservationView.value.rooms,
+      reservationView.value.operationalBookings,
       visibleRange.value,
     ),
   )
@@ -80,8 +78,11 @@ export const useBookingsStore = defineStore('bookings', () => {
       statusFilter.value !== null || sourceFilter.value !== null || roomTypeFilter.value !== null,
   )
   const hasRooms = computed(() => rooms.value.length > 0)
-  const canMoveBackward = computed(() => rangeStart.value > DEMO_PERIOD.start)
-  const canMoveForward = computed(() => rangeStart.value < LATEST_RANGE_START)
+  const canMoveBackward = computed(() => RANGE_STARTS.indexOf(rangeStart.value) > 0)
+  const canMoveForward = computed(() => {
+    const currentIndex = RANGE_STARTS.indexOf(rangeStart.value)
+    return currentIndex >= 0 && currentIndex < RANGE_STARTS.length - 1
+  })
 
   async function load(propertyId: string): Promise<void> {
     const requestId = ++latestRequest
@@ -105,7 +106,7 @@ export const useBookingsStore = defineStore('bookings', () => {
   }
 
   function shiftRange(direction: -1 | 1): void {
-    rangeStart.value = clampRangeStart(addDays(rangeStart.value, direction * VISIBLE_DAY_COUNT))
+    rangeStart.value = getAdjacentRangeStart(rangeStart.value, direction, RANGE_STARTS)
   }
 
   function jumpToDemoDate(): void {

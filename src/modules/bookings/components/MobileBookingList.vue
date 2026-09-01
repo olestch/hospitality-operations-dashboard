@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import type { Booking } from '@/modules/bookings/types/booking'
+import type { Booking, BookingStatus } from '@/modules/bookings/types/booking'
 import type { ReservationGridRow } from '@/modules/bookings/utils/reservationTimeline'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import EmptyState from '@/shared/ui/EmptyState.vue'
 
-const props = defineProps<{ bookings: readonly Booking[]; rows: readonly ReservationGridRow[] }>()
+const props = defineProps<{
+  bookings: readonly Booking[]
+  rows: readonly ReservationGridRow[]
+  rangeStart: string
+}>()
 const emit = defineEmits<{ select: [booking: Booking] }>()
 const dateFormatter = new Intl.DateTimeFormat('en', {
   month: 'short',
@@ -21,19 +25,25 @@ const roomNames = computed(
 const groups = computed(() => {
   const result = new Map<string, Booking[]>()
   for (const booking of props.bookings) {
-    const items = result.get(booking.checkIn) ?? []
+    const groupKey = booking.checkIn < props.rangeStart ? props.rangeStart : booking.checkIn
+    const items = result.get(groupKey) ?? []
     items.push(booking)
-    result.set(booking.checkIn, items)
+    result.set(groupKey, items)
   }
-  return [...result.entries()].map(([date, bookings]) => ({ date, bookings }))
+  return [...result.entries()].map(([date, bookings]) => ({
+    date,
+    bookings,
+    includesClippedBooking: bookings.some((booking) => booking.checkIn < props.rangeStart),
+  }))
 })
 
 function formatDate(value: string): string {
   return dateFormatter.format(new Date(`${value}T00:00:00Z`))
 }
-function badge(status: string): 'neutral' | 'success' | 'warning' {
+function badge(status: BookingStatus): 'neutral' | 'success' | 'warning' | 'danger' {
   if (status === 'checked-in') return 'success'
   if (status === 'confirmed') return 'warning'
+  if (status === 'cancelled') return 'danger'
   return 'neutral'
 }
 </script>
@@ -41,7 +51,9 @@ function badge(status: string): 'neutral' | 'success' | 'warning' {
 <template>
   <div v-if="groups.length" class="mobile-bookings">
     <section v-for="group in groups" :key="group.date">
-      <h2>{{ formatDate(group.date) }}</h2>
+      <h2>
+        {{ group.includesClippedBooking ? 'In house at range start' : formatDate(group.date) }}
+      </h2>
       <button
         v-for="booking in group.bookings"
         :key="booking.id"

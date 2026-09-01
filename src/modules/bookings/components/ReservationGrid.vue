@@ -6,6 +6,7 @@ import type {
   TimelineMonthGroup,
 } from '@/modules/bookings/utils/reservationTimeline'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
+import type { RoomStatus } from '@/shared/types/property'
 
 defineProps<{
   days: readonly TimelineDay[]
@@ -14,7 +15,7 @@ defineProps<{
 }>()
 const emit = defineEmits<{ select: [booking: Booking] }>()
 
-function roomBadge(status: string): 'neutral' | 'success' | 'warning' | 'danger' {
+function roomBadge(status: RoomStatus): 'neutral' | 'success' | 'warning' | 'danger' {
   if (status === 'available') return 'success'
   if (status === 'maintenance') return 'warning'
   if (status === 'out-of-service') return 'danger'
@@ -24,21 +25,14 @@ function roomBadge(status: string): 'neutral' | 'success' | 'warning' | 'danger'
 
 <template>
   <div class="reservation-scroll" role="region" aria-label="Reservation timeline" tabindex="0">
-    <div
-      class="reservation-grid"
-      role="grid"
-      :aria-colcount="days.length + 1"
-      :aria-rowcount="rows.length + 2"
-      :style="{ '--day-count': days.length }"
-    >
-      <div class="timeline-line timeline-months" role="row">
-        <div class="room-column room-column--header" role="columnheader">Rooms</div>
+    <div class="reservation-grid" :style="{ '--day-count': days.length }">
+      <div class="timeline-line timeline-months">
+        <div class="room-column room-column--header">Rooms</div>
         <div class="timeline-track timeline-track--months">
           <div
             v-for="month in months"
             :key="month.key"
             class="month-group"
-            role="columnheader"
             :style="{ gridColumn: `${month.startColumn} / span ${month.span}` }"
           >
             {{ month.label }}
@@ -46,28 +40,32 @@ function roomBadge(status: string): 'neutral' | 'success' | 'warning' | 'danger'
         </div>
       </div>
 
-      <div class="timeline-line timeline-header" role="row">
-        <div class="room-column room-column--subheader" role="columnheader">Room / unit</div>
+      <div class="timeline-line timeline-header">
+        <div class="room-column room-column--subheader">Room / unit</div>
         <div class="timeline-track timeline-track--days">
-          <div
+          <time
             v-for="day in days"
             :key="day.date"
             class="day-header"
             :class="{ 'is-demo-date': day.isDemoDate }"
-            role="columnheader"
-            :aria-label="day.date"
+            :datetime="day.date"
           >
             <span>{{ day.weekday }}</span
             ><strong>{{ day.dayNumber }}</strong>
-          </div>
+          </time>
         </div>
       </div>
 
-      <div v-for="row in rows" :key="row.room.id" class="timeline-line timeline-room" role="row">
-        <div class="room-column room-cell" role="rowheader">
+      <section
+        v-for="row in rows"
+        :key="row.room.id"
+        class="timeline-line timeline-room"
+        :aria-labelledby="`reservation-room-${row.room.id}`"
+      >
+        <div class="room-column room-cell">
           <div>
-            <strong>{{ row.room.number }}</strong
-            ><span>{{ row.room.name }}</span>
+            <h2 :id="`reservation-room-${row.room.id}`">{{ row.room.number }}</h2>
+            <span>{{ row.room.name }}</span>
           </div>
           <small>{{ row.room.type }} · {{ row.room.capacity }} guests</small>
           <BaseBadge :variant="roomBadge(row.room.status)">{{ row.room.status }}</BaseBadge>
@@ -82,7 +80,7 @@ function roomBadge(status: string): 'neutral' | 'success' | 'warning' | 'danger'
               'is-unavailable':
                 row.room.status === 'maintenance' || row.room.status === 'out-of-service',
             }"
-            role="gridcell"
+            aria-hidden="true"
           />
           <button
             v-for="span in row.bookings"
@@ -94,14 +92,14 @@ function roomBadge(status: string): 'neutral' | 'success' | 'warning' | 'danger'
             ]"
             type="button"
             :style="{ gridColumn: `${span.startColumn} / span ${span.span}` }"
-            :aria-label="`${span.booking.guestName}, ${span.booking.status}, ${span.booking.checkIn} to ${span.booking.checkOut}`"
+            :aria-label="`${span.booking.guestName}, room ${row.room.number}, ${span.booking.status}, ${span.booking.source}, ${span.booking.checkIn} to ${span.booking.checkOut}`"
             @click="emit('select', span.booking)"
           >
             <strong>{{ span.booking.guestName }}</strong
             ><span>{{ span.booking.status }}</span>
           </button>
         </div>
-      </div>
+      </section>
     </div>
   </div>
 </template>
@@ -109,6 +107,8 @@ function roomBadge(status: string): 'neutral' | 'success' | 'warning' | 'danger'
 <style scoped lang="scss">
 .reservation-scroll {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   overflow-x: auto;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -204,7 +204,8 @@ function roomBadge(status: string): 'neutral' | 'success' | 'warning' | 'danger'
   gap: var(--space-2);
   min-width: 0;
 }
-.room-cell strong {
+.room-cell h2 {
+  margin: 0;
   color: var(--color-text-strong);
   font-size: var(--font-size-sm);
 }
@@ -240,6 +241,7 @@ function roomBadge(status: string): 'neutral' | 'success' | 'warning' | 'danger'
   background: var(--color-surface-subtle);
 }
 .booking-bar {
+  grid-row: 1;
   z-index: 2;
   align-self: center;
   min-width: 0;
@@ -267,12 +269,12 @@ function roomBadge(status: string): 'neutral' | 'success' | 'warning' | 'danger'
   font-size: 0.625rem;
 }
 .booking-bar--confirmed {
-  border-color: #9fc9bd;
+  border-color: var(--color-primary-border);
   background: var(--color-primary-soft);
   color: var(--color-primary-hover);
 }
 .booking-bar--checked-in {
-  border-color: #9ac9b0;
+  border-color: var(--color-success-border);
   background: var(--color-success-soft);
   color: var(--color-success);
 }
