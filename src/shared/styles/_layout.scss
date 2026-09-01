@@ -233,10 +233,6 @@
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
 }
-.module-placeholder {
-  min-height: 20rem;
-}
-
 @media (max-width: $breakpoint-tablet) {
   .app-sidebar {
     visibility: hidden;
