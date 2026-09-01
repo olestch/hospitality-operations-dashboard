@@ -5,6 +5,7 @@ import { mockInventory } from '@/mocks/data/inventory'
 import { mockProperties, mockRooms } from '@/mocks/data/properties'
 import { mockRevenueMetrics } from '@/mocks/data/revenue'
 import { mockCurrentUser } from '@/mocks/data/user'
+import { validateInventoryData } from '@/modules/inventory/utils/validateInventoryData'
 import { validateInspectionData } from '@/modules/quality/utils/validateInspectionData'
 
 function assert(condition: boolean, message: string): asserts condition {
@@ -60,12 +61,7 @@ export function validateMockData(): void {
 
   validateInspectionData(mockInspections, mockInspectionDetails, propertyIds)
 
-  for (const item of mockInventory) {
-    const room = roomsById.get(item.roomId)
-    assert(propertyIds.has(item.propertyId), `${item.id} references an unknown property`)
-    assert(room !== undefined, `${item.id} references an unknown room`)
-    assert(room.propertyId === item.propertyId, `${item.id} room belongs to another property`)
-  }
+  validateInventoryData(mockInventory, propertyIds)
 
   assert(
     propertyIds.has(mockCurrentUser.preferredPropertyId),

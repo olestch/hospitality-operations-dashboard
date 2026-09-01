@@ -12,6 +12,7 @@ import {
 } from '@/modules/dashboard/utils/dashboardOperations'
 import { getInventory } from '@/modules/inventory/api/inventoryRepository'
 import type { InventoryItem } from '@/modules/inventory/types/inventory'
+import { deriveStockStatus } from '@/modules/inventory/utils/stockLevels'
 import { getInspections } from '@/modules/quality/api/inspectionsRepository'
 import type { Inspection } from '@/modules/quality/types/inspection'
 import { DEMO_DATE, DEMO_PERIOD } from '@/mocks/demoPeriod'
@@ -110,7 +111,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
     rooms.value.filter((room) => room.status === 'maintenance' || room.status === 'out-of-service'),
   )
   const inventoryIssues = computed(() =>
-    inventory.value.filter((item) => item.status === 'missing' || item.status === 'damaged'),
+    inventory.value.filter((item) => deriveStockStatus(item) !== 'healthy'),
   )
   const upcomingInspections = computed(() =>
     inspections.value

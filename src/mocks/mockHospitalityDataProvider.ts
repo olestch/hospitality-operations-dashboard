@@ -81,8 +81,6 @@ export const mockHospitalityDataProvider: HospitalityDataProvider = {
     return mockInventory.filter(
       (item) =>
         (!filters.propertyId || item.propertyId === filters.propertyId) &&
-        (!filters.roomId || item.roomId === filters.roomId) &&
-        (!filters.status || item.status === filters.status) &&
         (!filters.location || item.location === filters.location),
     )
   },

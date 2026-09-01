@@ -6,6 +6,7 @@ import { RouterLink } from 'vue-router'
 import { usePropertyStore } from '@/app/stores/propertyStore'
 import DashboardKpiCard from '@/modules/dashboard/components/DashboardKpiCard.vue'
 import { useDashboardStore } from '@/modules/dashboard/stores/dashboardStore'
+import { deriveStockStatus } from '@/modules/inventory/utils/stockLevels'
 import { DEMO_DATE } from '@/mocks/demoPeriod'
 import RevenueTrendChart from '@/shared/charts/RevenueTrendChart.vue'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
@@ -45,8 +46,11 @@ const pageDescription = computed(() => {
   return `${propertyName} · Fixed operational view for ${formatDate(DEMO_DATE)}`
 })
 const inventoryIssueSummary = computed(() => ({
-  missing: inventoryIssues.value.filter((item) => item.status === 'missing').length,
-  damaged: inventoryIssues.value.filter((item) => item.status === 'damaged').length,
+  reorder: inventoryIssues.value.filter((item) => {
+    const status = deriveStockStatus(item)
+    return status === 'reorder' || status === 'out-of-stock'
+  }).length,
+  belowPar: inventoryIssues.value.filter((item) => deriveStockStatus(item) === 'below-par').length,
 }))
 
 function formatDate(date: string): string {
@@ -215,8 +219,8 @@ function bookingBadge(status: string): 'neutral' | 'success' | 'warning' | 'dang
             >
             <h3>Inventory exceptions</h3>
             <p>
-              {{ inventoryIssueSummary.missing }} missing ·
-              {{ inventoryIssueSummary.damaged }} damaged
+              {{ inventoryIssueSummary.reorder }} reorder ·
+              {{ inventoryIssueSummary.belowPar }} below par
             </p>
             <RouterLink class="text-link" to="/inventory">Review inventory</RouterLink>
           </article>
