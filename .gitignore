@@ -1,0 +1,13 @@
+node_modules
+.npm-cache
+work
+dist
+.env
+.env.*
+!.env.example
+*.local
+*.log
+.DS_Store
+.idea
+.vscode/*
+!.vscode/extensions.json
