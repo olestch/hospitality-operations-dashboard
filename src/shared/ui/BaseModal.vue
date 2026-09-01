@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, useId, watch } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 
 const props = defineProps<{ open: boolean; title: string }>()
 const emit = defineEmits<{ close: [] }>()
 const titleId = `modal-title-${useId()}`
+const dialog = ref<HTMLElement | null>(null)
 let previousBodyOverflow = ''
+let previouslyFocusedElement: HTMLElement | null = null
 
 function requestClose() {
   emit('close')
@@ -21,18 +23,40 @@ function updateBodyScroll(isOpen: boolean) {
   }
 }
 
-watch(() => props.open, updateBodyScroll, { immediate: true })
+watch(
+  () => props.open,
+  async (isOpen) => {
+    updateBodyScroll(isOpen)
+    if (isOpen) {
+      previouslyFocusedElement = document.activeElement as HTMLElement | null
+      await nextTick()
+      dialog.value?.focus()
+    } else {
+      previouslyFocusedElement?.focus()
+      previouslyFocusedElement = null
+    }
+  },
+  { immediate: true },
+)
 onMounted(() => window.addEventListener('keydown', handleKeydown))
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydown)
   document.body.style.overflow = previousBodyOverflow
+  if (props.open) previouslyFocusedElement?.focus()
 })
 </script>
 
 <template>
   <Teleport to="body">
     <div v-if="open" class="modal" role="presentation" @click.self="requestClose">
-      <section class="modal__dialog" role="dialog" aria-modal="true" :aria-labelledby="titleId">
+      <section
+        ref="dialog"
+        class="modal__dialog"
+        role="dialog"
+        aria-modal="true"
+        :aria-labelledby="titleId"
+        tabindex="-1"
+      >
         <header class="modal__header">
           <h2 :id="titleId">{{ title }}</h2>
           <button type="button" aria-label="Close dialog" @click="requestClose">×</button>
