@@ -74,9 +74,7 @@ export const mockHospitalityDataProvider: HospitalityDataProvider = {
   async getInspection(id) {
     await delay(MOCK_DELAY_MS)
     const detail = mockInspectionDetails.find((inspection) => inspection.id === id)
-    if (detail) return detail
-    const inspection = mockInspections.find((item) => item.id === id)
-    return inspection ? { ...inspection, sections: [] } : null
+    return detail ?? null
   },
   async getInventory(filters: InventoryFilters = {}) {
     await delay(MOCK_DELAY_MS)

@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 
-const props = defineProps<{ open: boolean; title: string }>()
+const props = withDefaults(
+  defineProps<{ open: boolean; title: string; size?: 'default' | 'large' }>(),
+  { size: 'default' },
+)
 const emit = defineEmits<{ close: [] }>()
 const titleId = `modal-title-${useId()}`
 const dialog = ref<HTMLElement | null>(null)
@@ -89,6 +92,7 @@ onBeforeUnmount(() => {
       <section
         ref="dialog"
         class="modal__dialog"
+        :class="`modal__dialog--${size}`"
         role="dialog"
         aria-modal="true"
         :aria-labelledby="titleId"
@@ -122,6 +126,9 @@ onBeforeUnmount(() => {
   border-radius: var(--radius-lg);
   background: var(--color-surface);
   box-shadow: var(--shadow-md);
+}
+.modal__dialog--large {
+  width: min(100%, 52rem);
 }
 .modal__header,
 .modal__footer {

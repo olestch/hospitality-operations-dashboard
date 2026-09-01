@@ -5,6 +5,7 @@ import { mockInventory } from '@/mocks/data/inventory'
 import { mockProperties, mockRooms } from '@/mocks/data/properties'
 import { mockRevenueMetrics } from '@/mocks/data/revenue'
 import { mockCurrentUser } from '@/mocks/data/user'
+import { validateInspectionData } from '@/modules/quality/utils/validateInspectionData'
 
 function assert(condition: boolean, message: string): asserts condition {
   if (!condition) throw new Error(`Mock data integrity error: ${message}`)
@@ -13,7 +14,6 @@ function assert(condition: boolean, message: string): asserts condition {
 export function validateMockData(): void {
   const propertyIds = new Set(mockProperties.map((property) => property.id))
   const roomsById = new Map(mockRooms.map((room) => [room.id, room]))
-  const inspectionIds = new Set(mockInspections.map((inspection) => inspection.id))
 
   for (const property of mockProperties) {
     const actualRoomCount = mockRooms.filter((room) => room.propertyId === property.id).length
@@ -58,22 +58,7 @@ export function validateMockData(): void {
     )
   }
 
-  for (const inspection of mockInspections) {
-    assert(
-      propertyIds.has(inspection.propertyId),
-      `${inspection.id} references an unknown property`,
-    )
-    assert(
-      inspection.status === 'completed'
-        ? inspection.completedDate !== null
-        : inspection.completedDate === null,
-      `${inspection.id} completion state is inconsistent`,
-    )
-  }
-
-  for (const detail of mockInspectionDetails) {
-    assert(inspectionIds.has(detail.id), `${detail.id} detail has no inspection summary`)
-  }
+  validateInspectionData(mockInspections, mockInspectionDetails, propertyIds)
 
   for (const item of mockInventory) {
     const room = roomsById.get(item.roomId)
