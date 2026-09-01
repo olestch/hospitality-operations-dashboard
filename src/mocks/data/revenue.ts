@@ -1,6 +1,9 @@
 import type { RevenueMetric } from '@/modules/analytics/types/revenue'
+import { allocateBookingRevenue } from '@/modules/analytics/utils/revenueAllocation'
+import { bookingOverlapsRange } from '@/modules/bookings/utils/reservationTimeline'
+import { mockBookings } from '@/mocks/data/bookings'
 import { DEMO_PERIOD } from '@/mocks/demoPeriod'
-import { mockProperties } from '@/mocks/data/properties'
+import { mockProperties, mockRooms } from '@/mocks/data/properties'
 
 const DAY_IN_MILLISECONDS = 86_400_000
 
@@ -8,36 +11,49 @@ function toIsoDate(timestamp: number): string {
   return new Date(timestamp).toISOString().slice(0, 10)
 }
 
-function round(value: number, precision = 2): number {
-  const factor = 10 ** precision
-  return Math.round(value * factor) / factor
-}
-
 function createDailyMetrics(): RevenueMetric[] {
   const start = Date.parse(`${DEMO_PERIOD.start}T00:00:00Z`)
   const end = Date.parse(`${DEMO_PERIOD.end}T00:00:00Z`)
 
-  return mockProperties.flatMap((property, propertyIndex) => {
+  return mockProperties.flatMap((property) => {
     const metrics: RevenueMetric[] = []
+    const sellableRoomIds = new Set(
+      mockRooms
+        .filter(
+          (room) =>
+            room.propertyId === property.id &&
+            room.status !== 'maintenance' &&
+            room.status !== 'out-of-service',
+        )
+        .map((room) => room.id),
+    )
+    const propertyBookings = mockBookings.filter((booking) => booking.propertyId === property.id)
 
-    for (
-      let timestamp = start, dayIndex = 0;
-      timestamp <= end;
-      timestamp += DAY_IN_MILLISECONDS, dayIndex += 1
-    ) {
-      const occupancyRate = round(0.48 + ((dayIndex * 7 + propertyIndex * 11) % 41) / 100)
-      const adr = round(112 + propertyIndex * 14 + ((dayIndex * 5) % 27))
-      const occupiedRooms = Math.round(property.roomCount * occupancyRate)
-      const revenue = round(occupiedRooms * adr)
+    for (let timestamp = start; timestamp <= end; timestamp += DAY_IN_MILLISECONDS) {
+      const date = toIsoDate(timestamp)
+      const range = { start: date, end: date }
+      const activeBookings = propertyBookings.filter(
+        (booking) => sellableRoomIds.has(booking.roomId) && bookingOverlapsRange(booking, range),
+      )
+      const occupiedRoomNights = new Set(activeBookings.map((booking) => booking.roomId)).size
+      const sellableRoomNights = sellableRoomIds.size
+      const revenue = activeBookings.reduce(
+        (total, booking) => total + allocateBookingRevenue(booking, range).revenue,
+        0,
+      )
+      const occupancyRate = sellableRoomNights ? occupiedRoomNights / sellableRoomNights : 0
+      const adr = occupiedRoomNights ? revenue / occupiedRoomNights : 0
 
       metrics.push({
-        date: toIsoDate(timestamp),
+        date,
         period: 'day',
         propertyId: property.id,
         revenue,
         occupancyRate,
         adr,
-        revpar: round(adr * occupancyRate),
+        revpar: sellableRoomNights ? revenue / sellableRoomNights : 0,
+        occupiedRoomNights,
+        sellableRoomNights,
       })
     }
 
@@ -51,11 +67,17 @@ function createMonthlyMetrics(dailyMetrics: readonly RevenueMetric[]): RevenueMe
       const entries = dailyMetrics.filter(
         (metric) => metric.propertyId === property.id && metric.date.startsWith(month),
       )
-      const revenue = round(entries.reduce((total, metric) => total + metric.revenue, 0))
-      const occupancyRate = round(
-        entries.reduce((total, metric) => total + metric.occupancyRate, 0) / entries.length,
+      const revenue = entries.reduce((total, metric) => total + metric.revenue, 0)
+      const occupiedRoomNights = entries.reduce(
+        (total, metric) => total + metric.occupiedRoomNights,
+        0,
       )
-      const adr = round(entries.reduce((total, metric) => total + metric.adr, 0) / entries.length)
+      const sellableRoomNights = entries.reduce(
+        (total, metric) => total + metric.sellableRoomNights,
+        0,
+      )
+      const occupancyRate = sellableRoomNights ? occupiedRoomNights / sellableRoomNights : 0
+      const adr = occupiedRoomNights ? revenue / occupiedRoomNights : 0
 
       return {
         date: `${month}-01`,
@@ -64,7 +86,9 @@ function createMonthlyMetrics(dailyMetrics: readonly RevenueMetric[]): RevenueMe
         revenue,
         occupancyRate,
         adr,
-        revpar: round(adr * occupancyRate),
+        revpar: sellableRoomNights ? revenue / sellableRoomNights : 0,
+        occupiedRoomNights,
+        sellableRoomNights,
       }
     }),
   )

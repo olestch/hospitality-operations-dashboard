@@ -45,6 +45,17 @@ export function validateMockData(): void {
       propertyIds.has(metric.propertyId),
       `${metric.date} metric references an unknown property`,
     )
+    assert(
+      metric.occupiedRoomNights <= metric.sellableRoomNights,
+      `${metric.date} occupied room-nights exceed sellable capacity`,
+    )
+    assert(
+      Math.abs(
+        metric.occupancyRate -
+          (metric.sellableRoomNights ? metric.occupiedRoomNights / metric.sellableRoomNights : 0),
+      ) < 1e-9,
+      `${metric.date} occupancy is inconsistent with room-night totals`,
+    )
   }
 
   for (const inspection of mockInspections) {

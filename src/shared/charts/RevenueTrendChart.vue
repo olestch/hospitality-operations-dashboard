@@ -35,12 +35,13 @@ const options = computed<ApexOptions>(() => ({
   stroke: { curve: 'smooth', width: 3 },
   tooltip: { y: { formatter: (value: number) => currencyFormatter.format(value) } },
   xaxis: {
-    categories: props.metrics.map((metric) => metric.date),
+    categories: props.metrics.map((metric) =>
+      dateFormatter.format(new Date(`${metric.date}T00:00:00Z`)),
+    ),
     axisBorder: { show: false },
     axisTicks: { show: false },
     labels: {
       rotate: 0,
-      formatter: (value: string) => dateFormatter.format(new Date(`${value}T00:00:00Z`)),
       style: { colors: '#6d7773', fontSize: '12px' },
     },
     tickAmount: 5,

@@ -8,6 +8,8 @@ export interface RevenueMetric {
   occupancyRate: number
   adr: number
   revpar: number
+  occupiedRoomNights: number
+  sellableRoomNights: number
 }
 
 export interface RevenueMetricFilters {
@@ -16,3 +18,5 @@ export interface RevenueMetricFilters {
   dateFrom?: string
   dateTo?: string
 }
+
+export type HospitalityMetricKey = 'revenue' | 'occupancy' | 'adr' | 'revpar'
