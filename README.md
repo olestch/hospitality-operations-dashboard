@@ -25,6 +25,7 @@ npm run dev
 ```sh
 npm run lint
 npm run format:check
+npm run test
 npm run build
 ```
 
@@ -44,9 +45,18 @@ The data layer is split into three boundaries:
 Vue components do not import raw mock arrays. Loading and error state belong to stores or
 features; the first implementation is the Pinia property workspace store.
 
+The Settings route exposes the current demo profile and a deliberately small set of browser-local
+workspace preferences. Preferred property is shared with the global property store; density and
+motion settings affect the application shell without simulating server-side account management.
+
 ## Demo data
 
 All names, identifiers, locations, and operational values are fictional. The fixed demo period
 is **2025-01-01 through 2025-03-31**, so results remain stable regardless of the current date.
 Daily metrics are derived deterministically from this fixed period; no runtime randomness or
 real backend connection is used.
+
+Chart-heavy routes are lazy-loaded and ApexCharts is imported asynchronously inside chart
+components. Its separate production chunk remains intentionally larger than Vite's default warning
+threshold; keeping the established accessible chart implementation is preferable to hiding the
+warning or replacing the library during this polish phase.

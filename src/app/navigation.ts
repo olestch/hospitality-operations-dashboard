@@ -9,4 +9,5 @@ export const primaryNavigation: readonly NavigationItem[] = [
   { label: 'Analytics', to: '/analytics' },
   { label: 'Quality', to: '/quality' },
   { label: 'Inventory', to: '/inventory' },
+  { label: 'Settings', to: '/settings' },
 ]

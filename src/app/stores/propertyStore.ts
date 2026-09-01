@@ -15,7 +15,7 @@ export const usePropertyStore = defineStore('property', () => {
     () => properties.value.find((property) => property.id === selectedPropertyId.value) ?? null,
   )
 
-  async function loadProperties(): Promise<void> {
+  async function loadProperties(preferredPropertyId: string | null = null): Promise<void> {
     if (status.value === 'loading' || status.value === 'success') return
 
     status.value = 'loading'
@@ -23,7 +23,11 @@ export const usePropertyStore = defineStore('property', () => {
 
     try {
       properties.value = await getProperties()
-      selectedPropertyId.value = properties.value[0]?.id ?? null
+      selectedPropertyId.value = properties.value.some(
+        (property) => property.id === preferredPropertyId,
+      )
+        ? preferredPropertyId
+        : (properties.value[0]?.id ?? null)
       status.value = 'success'
     } catch (reason: unknown) {
       error.value = reason instanceof Error ? reason.message : 'Unable to load properties'

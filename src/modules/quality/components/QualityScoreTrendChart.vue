@@ -2,6 +2,8 @@
 import type { ApexAxisChartSeries, ApexOptions } from 'apexcharts'
 import { computed, defineAsyncComponent } from 'vue'
 
+import { CHART_THEME } from '@/shared/charts/chartTheme'
+
 import type { QualityTrendPoint } from '@/modules/quality/utils/qualityMetrics'
 import EmptyState from '@/shared/ui/EmptyState.vue'
 
@@ -20,12 +22,12 @@ const series = computed<ApexAxisChartSeries>(() => [
 ])
 const options = computed<ApexOptions>(() => ({
   chart: { toolbar: { show: false }, animations: { enabled: false }, fontFamily: 'inherit' },
-  colors: ['#2563eb'],
+  colors: [CHART_THEME.primary],
   stroke: { curve: 'straight', width: 2 },
   markers: { size: 4 },
   dataLabels: { enabled: false },
-  grid: { borderColor: '#e5e7eb', strokeDashArray: 3 },
-  xaxis: { categories: categories.value, labels: { style: { colors: '#64748b' } } },
+  grid: { borderColor: CHART_THEME.border, strokeDashArray: 3 },
+  xaxis: { categories: categories.value, labels: { style: { colors: CHART_THEME.text } } },
   yaxis: {
     min: 0,
     max: 100,

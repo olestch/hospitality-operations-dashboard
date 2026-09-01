@@ -2,6 +2,8 @@
 import type { ApexAxisChartSeries, ApexOptions } from 'apexcharts'
 import { computed, defineAsyncComponent } from 'vue'
 
+import { CHART_THEME } from '@/shared/charts/chartTheme'
+
 import type { RevenueSourcePerformance } from '@/modules/analytics/utils/hospitalityMetrics'
 import { DEMO_CURRENCY } from '@/mocks/demoPeriod'
 
@@ -26,19 +28,19 @@ const options = computed<ApexOptions>(() => ({
     animations: { enabled: false },
     fontFamily: 'inherit',
   },
-  colors: ['#216354'],
+  colors: [CHART_THEME.primary],
   dataLabels: { enabled: false },
-  grid: { borderColor: '#dfe4e2', strokeDashArray: 4 },
+  grid: { borderColor: CHART_THEME.border, strokeDashArray: 4 },
   plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '52%' } },
   tooltip: { y: { formatter: (value: number) => currencyFormatter.format(value) } },
   xaxis: {
     categories: props.sources.map((source) => source.source),
     labels: {
       formatter: (value: string) => currencyFormatter.format(Number(value)),
-      style: { colors: '#6d7773' },
+      style: { colors: CHART_THEME.text },
     },
   },
-  yaxis: { labels: { style: { colors: '#34403b' } } },
+  yaxis: { labels: { style: { colors: CHART_THEME.textStrong } } },
 }))
 </script>
 

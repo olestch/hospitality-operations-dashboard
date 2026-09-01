@@ -2,6 +2,8 @@
 import type { ApexAxisChartSeries, ApexOptions } from 'apexcharts'
 import { computed, defineAsyncComponent } from 'vue'
 
+import { CHART_THEME } from '@/shared/charts/chartTheme'
+
 import type { HospitalityMetricKey, RevenueMetric } from '@/modules/analytics/types/revenue'
 import { DEMO_CURRENCY } from '@/mocks/demoPeriod'
 
@@ -48,9 +50,9 @@ const options = computed<ApexOptions>(() => ({
     fontFamily: 'inherit',
     zoom: { enabled: false },
   },
-  colors: ['#216354'],
+  colors: [CHART_THEME.primary],
   dataLabels: { enabled: false },
-  grid: { borderColor: '#dfe4e2', strokeDashArray: 4, padding: { left: 8, right: 8 } },
+  grid: { borderColor: CHART_THEME.border, strokeDashArray: 4, padding: { left: 8, right: 8 } },
   markers: { size: props.metrics.length <= 7 ? 3 : 0, hover: { size: 4 } },
   stroke: { curve: 'straight', width: 2.5 },
   tooltip: { y: { formatter: formatMetric } },
@@ -62,14 +64,14 @@ const options = computed<ApexOptions>(() => ({
     axisTicks: { show: false },
     labels: {
       rotate: 0,
-      style: { colors: '#6d7773', fontSize: '12px' },
+      style: { colors: CHART_THEME.text, fontSize: '12px' },
     },
     tickAmount: props.metrics.length <= 7 ? props.metrics.length - 1 : 5,
   },
   yaxis: {
     min: props.metric === 'occupancy' ? 0 : undefined,
     max: props.metric === 'occupancy' ? 1 : undefined,
-    labels: { formatter: formatMetric, style: { colors: '#6d7773' } },
+    labels: { formatter: formatMetric, style: { colors: CHART_THEME.text } },
   },
 }))
 

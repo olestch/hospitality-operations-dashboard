@@ -86,12 +86,19 @@
   color: var(--color-text-inverse);
 }
 .app-nav__link.router-link-active::before {
-  background: #75c4aa;
+  background: var(--color-sidebar-accent);
+}
+.app-sidebar__property {
+  display: none;
+  margin-top: var(--space-6);
+}
+.app-sidebar__property .select__label {
+  color: var(--color-sidebar-muted);
 }
 .app-sidebar__footer {
   margin-top: auto;
   padding: var(--space-4) var(--space-2) 0;
-  border-top: 1px solid rgb(255 255 255 / 10%);
+  border-top: 1px solid var(--color-sidebar-border);
   color: var(--color-sidebar-muted);
   font-size: var(--font-size-xs);
 }
@@ -193,6 +200,12 @@
   margin: 0 auto;
   padding: var(--space-8);
 }
+.app-shell[data-density='compact'] .app-main {
+  padding: var(--space-6);
+}
+.app-shell[data-density='compact'] :is(.card__header, .card__content) {
+  padding: var(--space-4);
+}
 .page-header {
   display: flex;
   align-items: flex-end;
@@ -230,11 +243,15 @@
     transform: translateX(-100%);
     transition:
       transform 180ms ease,
-      visibility 180ms;
+      visibility 0s linear 180ms;
   }
   .app-sidebar.is-open {
     visibility: visible;
     transform: translateX(0);
+    transition-delay: 0s;
+  }
+  .app-sidebar__property {
+    display: block;
   }
   .app-body {
     margin-left: 0;
@@ -261,6 +278,9 @@
   .app-main {
     padding: var(--space-6) var(--space-4);
   }
+  .app-shell[data-density='compact'] .app-main {
+    padding: var(--space-4);
+  }
   .page-header {
     align-items: flex-start;
     flex-direction: column;
@@ -269,7 +289,17 @@
 
 @media (prefers-reduced-motion: reduce) {
   .app-sidebar,
-  .app-nav__link {
+  .app-nav__link,
+  .button {
     transition: none;
   }
+}
+
+.app-shell[data-motion='reduced'] :is(.app-sidebar, .app-nav__link, .button) {
+  transition: none;
+}
+
+.app-shell[data-motion='reduced']
+  :is(.dashboard-loading span, .bookings-loading span, .analytics-loading span) {
+  animation: none;
 }
