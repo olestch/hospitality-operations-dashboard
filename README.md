@@ -60,17 +60,6 @@ The `HospitalityDataProvider` contract could be implemented by a real API client
 repository includes only its deterministic local implementation. Mock-data integrity is validated
 by tests.
 
-## What this project demonstrates
-
-- Vue 3 Composition API and strict TypeScript organized around feature boundaries.
-- Pinia state management with a shared property workspace context.
-- Typed repositories and deterministic asynchronous mock APIs.
-- Tested domain calculations for reservations, hospitality metrics, inspections, and stock levels.
-- Responsive operational interfaces, including mobile-specific alternatives for dense data.
-- Stale-response protection when properties change during asynchronous requests.
-- Accessible navigation and modals with keyboard handling, focus management, and reduced motion.
-- Route-level code splitting with chart dependencies isolated from the initial application bundle.
-
 ## Selected engineering decisions
 
 - **Stable demo semantics:** operational results use a fixed reference date rather than the user's
