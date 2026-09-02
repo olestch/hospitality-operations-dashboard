@@ -1,8 +1,12 @@
 export const CHART_THEME = {
   primary: '#216354',
+  surface: '#ffffff',
   border: '#dfe4e2',
   text: '#6d7773',
   textStrong: '#34403b',
+  success: '#247653',
+  warning: '#b77d20',
+  danger: '#b23b3b',
 } as const
 
 export function createTemporalAreaFill() {

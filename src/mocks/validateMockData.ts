@@ -7,6 +7,7 @@ import { mockRevenueMetrics } from '@/mocks/data/revenue'
 import { mockCurrentUser } from '@/mocks/data/user'
 import { validateInventoryData } from '@/modules/inventory/utils/validateInventoryData'
 import { validateInspectionData } from '@/modules/quality/utils/validateInspectionData'
+import { isHousekeepingStatus } from '@/shared/types/property'
 
 function assert(condition: boolean, message: string): asserts condition {
   if (!condition) throw new Error(`Mock data integrity error: ${message}`)
@@ -22,6 +23,10 @@ export function validateMockData(): void {
 
   for (const room of mockRooms) {
     assert(propertyIds.has(room.propertyId), `${room.id} references an unknown property`)
+    assert(
+      isHousekeepingStatus(room.housekeepingStatus),
+      `${room.id} has an invalid housekeeping status`,
+    )
   }
 
   validateBookingData(mockBookings, mockRooms, propertyIds)

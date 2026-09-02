@@ -34,6 +34,7 @@ const rooms: Room[] = [
     type: 'Standard',
     capacity: 2,
     status: 'available',
+    housekeepingStatus: 'inspected',
   },
   {
     id: 'room-2',
@@ -43,6 +44,7 @@ const rooms: Room[] = [
     type: 'Standard',
     capacity: 2,
     status: 'maintenance',
+    housekeepingStatus: 'dirty',
   },
   {
     id: 'room-3',
@@ -52,6 +54,7 @@ const rooms: Room[] = [
     type: 'Standard',
     capacity: 2,
     status: 'available',
+    housekeepingStatus: 'cleaned',
   },
 ]
 

@@ -36,6 +36,7 @@ export const mockRooms: readonly Room[] = [
     type: 'Standard',
     capacity: 2,
     status: 'occupied',
+    housekeepingStatus: 'inspected',
   },
   {
     id: 'room-nq-102',
@@ -45,6 +46,7 @@ export const mockRooms: readonly Room[] = [
     type: 'Standard',
     capacity: 2,
     status: 'available',
+    housekeepingStatus: 'dirty',
   },
   {
     id: 'room-nq-103',
@@ -54,6 +56,7 @@ export const mockRooms: readonly Room[] = [
     type: 'Twin',
     capacity: 2,
     status: 'available',
+    housekeepingStatus: 'cleaned',
   },
   {
     id: 'room-nq-104',
@@ -63,6 +66,7 @@ export const mockRooms: readonly Room[] = [
     type: 'Twin',
     capacity: 2,
     status: 'maintenance',
+    housekeepingStatus: 'dirty',
   },
   {
     id: 'room-nq-201',
@@ -72,6 +76,7 @@ export const mockRooms: readonly Room[] = [
     type: 'Suite',
     capacity: 3,
     status: 'occupied',
+    housekeepingStatus: 'inspected',
   },
   {
     id: 'room-nq-202',
@@ -81,6 +86,7 @@ export const mockRooms: readonly Room[] = [
     type: 'Suite',
     capacity: 3,
     status: 'available',
+    housekeepingStatus: 'dirty',
   },
   {
     id: 'room-nq-203',
@@ -90,6 +96,7 @@ export const mockRooms: readonly Room[] = [
     type: 'Family',
     capacity: 4,
     status: 'available',
+    housekeepingStatus: 'cleaned',
   },
   {
     id: 'room-nq-204',
@@ -99,6 +106,7 @@ export const mockRooms: readonly Room[] = [
     type: 'Family',
     capacity: 4,
     status: 'out-of-service',
+    housekeepingStatus: 'dirty',
   },
   {
     id: 'room-mc-101',
@@ -108,6 +116,7 @@ export const mockRooms: readonly Room[] = [
     type: 'Standard',
     capacity: 2,
     status: 'available',
+    housekeepingStatus: 'dirty',
   },
   {
     id: 'room-mc-102',
@@ -117,6 +126,7 @@ export const mockRooms: readonly Room[] = [
     type: 'Standard',
     capacity: 2,
     status: 'occupied',
+    housekeepingStatus: 'inspected',
   },
   {
     id: 'room-mc-103',
@@ -126,6 +136,7 @@ export const mockRooms: readonly Room[] = [
     type: 'Twin',
     capacity: 2,
     status: 'available',
+    housekeepingStatus: 'cleaned',
   },
   {
     id: 'room-mc-104',
@@ -135,6 +146,7 @@ export const mockRooms: readonly Room[] = [
     type: 'Twin',
     capacity: 2,
     status: 'available',
+    housekeepingStatus: 'dirty',
   },
   {
     id: 'room-mc-201',
@@ -144,6 +156,7 @@ export const mockRooms: readonly Room[] = [
     type: 'Suite',
     capacity: 3,
     status: 'occupied',
+    housekeepingStatus: 'inspected',
   },
   {
     id: 'room-mc-202',
@@ -153,6 +166,7 @@ export const mockRooms: readonly Room[] = [
     type: 'Suite',
     capacity: 3,
     status: 'maintenance',
+    housekeepingStatus: 'dirty',
   },
   {
     id: 'room-mc-203',
@@ -162,6 +176,7 @@ export const mockRooms: readonly Room[] = [
     type: 'Family',
     capacity: 4,
     status: 'available',
+    housekeepingStatus: 'cleaned',
   },
   {
     id: 'room-mc-204',
@@ -171,6 +186,7 @@ export const mockRooms: readonly Room[] = [
     type: 'Family',
     capacity: 4,
     status: 'available',
+    housekeepingStatus: 'inspected',
   },
   {
     id: 'room-sh-101',
@@ -180,6 +196,7 @@ export const mockRooms: readonly Room[] = [
     type: 'Standard',
     capacity: 2,
     status: 'occupied',
+    housekeepingStatus: 'inspected',
   },
   {
     id: 'room-sh-102',
@@ -189,6 +206,7 @@ export const mockRooms: readonly Room[] = [
     type: 'Standard',
     capacity: 2,
     status: 'available',
+    housekeepingStatus: 'dirty',
   },
   {
     id: 'room-sh-103',
@@ -198,6 +216,7 @@ export const mockRooms: readonly Room[] = [
     type: 'Twin',
     capacity: 2,
     status: 'available',
+    housekeepingStatus: 'cleaned',
   },
   {
     id: 'room-sh-104',
@@ -207,6 +226,7 @@ export const mockRooms: readonly Room[] = [
     type: 'Twin',
     capacity: 2,
     status: 'available',
+    housekeepingStatus: 'inspected',
   },
   {
     id: 'room-sh-201',
@@ -216,6 +236,7 @@ export const mockRooms: readonly Room[] = [
     type: 'Suite',
     capacity: 3,
     status: 'occupied',
+    housekeepingStatus: 'cleaned',
   },
   {
     id: 'room-sh-202',
@@ -225,6 +246,7 @@ export const mockRooms: readonly Room[] = [
     type: 'Suite',
     capacity: 3,
     status: 'available',
+    housekeepingStatus: 'dirty',
   },
   {
     id: 'room-sh-203',
@@ -234,6 +256,7 @@ export const mockRooms: readonly Room[] = [
     type: 'Family',
     capacity: 4,
     status: 'maintenance',
+    housekeepingStatus: 'dirty',
   },
   {
     id: 'room-sh-204',
@@ -243,5 +266,6 @@ export const mockRooms: readonly Room[] = [
     type: 'Family',
     capacity: 4,
     status: 'available',
+    housekeepingStatus: 'inspected',
   },
 ]

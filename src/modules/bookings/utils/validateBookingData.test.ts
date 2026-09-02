@@ -14,6 +14,7 @@ const rooms: Room[] = [
     type: 'Standard',
     capacity: 2,
     status: 'available',
+    housekeepingStatus: 'inspected',
   },
 ]
 const booking: Booking = {

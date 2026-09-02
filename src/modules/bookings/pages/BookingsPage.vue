@@ -7,6 +7,7 @@ import BookingDetailModal from '@/modules/bookings/components/BookingDetailModal
 import MobileBookingList from '@/modules/bookings/components/MobileBookingList.vue'
 import ReservationGrid from '@/modules/bookings/components/ReservationGrid.vue'
 import ReservationSummaryStrip from '@/modules/bookings/components/ReservationSummaryStrip.vue'
+import RoomReadinessDonut from '@/modules/bookings/components/RoomReadinessDonut.vue'
 import { useBookingsStore } from '@/modules/bookings/stores/bookingsStore'
 import type { Booking, BookingSource, BookingStatus } from '@/modules/bookings/types/booking'
 import {
@@ -32,6 +33,7 @@ const {
   gridRows,
   visibleBookings,
   summary,
+  housekeepingReadiness,
   roomTypes,
   statusFilter,
   sourceFilter,
@@ -196,6 +198,7 @@ function closeBooking(): void {
 
     <template v-else>
       <ReservationSummaryStrip :summary="summary" />
+      <RoomReadinessDonut :summary="housekeepingReadiness" />
 
       <p v-if="visibleBookings.length === 0 && hasActiveFilters" class="filter-empty" role="status">
         No bookings match the current filters. The room timeline remains available for context.

@@ -18,6 +18,7 @@ import {
   createVisibleRange,
   getAdjacentRangeStart,
 } from '@/modules/bookings/utils/reservationRange'
+import { calculateHousekeepingReadiness } from '@/modules/bookings/utils/housekeepingReadiness'
 import { DEMO_DATE, DEMO_PERIOD } from '@/mocks/demoPeriod'
 import { getRooms } from '@/shared/api/propertiesRepository'
 import type { Room } from '@/shared/types/property'
@@ -72,6 +73,7 @@ export const useBookingsStore = defineStore('bookings', () => {
       visibleRange.value,
     ),
   )
+  const housekeepingReadiness = computed(() => calculateHousekeepingReadiness(rooms.value))
   const roomTypes = computed(() => [...new Set(rooms.value.map((room) => room.type))].sort())
   const hasActiveFilters = computed(
     () =>
@@ -140,6 +142,7 @@ export const useBookingsStore = defineStore('bookings', () => {
     gridRows,
     visibleBookings,
     summary,
+    housekeepingReadiness,
     roomTypes,
     statusFilter,
     sourceFilter,
