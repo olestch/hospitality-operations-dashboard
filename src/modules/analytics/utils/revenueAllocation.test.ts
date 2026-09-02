@@ -11,7 +11,9 @@ const booking: Booking = {
   guestCount: 2,
   source: 'Direct',
   checkIn: '2025-03-08',
+  checkInTime: '15:00',
   checkOut: '2025-03-12',
+  checkOutTime: '11:00',
   status: 'confirmed',
   totalAmount: 800,
   paidAmount: 800,
@@ -73,5 +75,18 @@ describe('stay-night revenue allocation', () => {
       0,
     )
     expect(total).toBeCloseTo(booking.totalAmount)
+  })
+
+  it('keeps room-night revenue independent from arrival and departure times', () => {
+    const adjustedTimes: Booking = {
+      ...booking,
+      checkInTime: '00:00',
+      checkOutTime: '23:59',
+    }
+    const range = { start: '2025-03-09', end: '2025-03-10' }
+
+    expect(allocateBookingRevenue(adjustedTimes, range)).toEqual(
+      allocateBookingRevenue(booking, range),
+    )
   })
 })

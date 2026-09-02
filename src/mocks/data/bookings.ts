@@ -1,18 +1,23 @@
-import type { Booking, BookingSource, BookingStatus } from '@/modules/bookings/types/booking'
+import type { Booking, LocalTime } from '@/modules/bookings/types/booking'
 
-interface BookingSeed {
-  id: string
-  propertyId: string
-  roomId: string
-  guestName: string
-  guestCount: number
-  source: BookingSource
-  checkIn: string
-  checkOut: string
-  status: BookingStatus
-  totalAmount: number
-  paidAmount: number
-}
+type BookingSeed = Omit<Booking, 'checkInTime' | 'checkOutTime'>
+
+const CHECK_IN_TIMES = [
+  '14:00',
+  '15:00',
+  '16:00',
+  '13:30',
+  '17:00',
+  '15:30',
+] as const satisfies readonly LocalTime[]
+const CHECK_OUT_TIMES = [
+  '11:00',
+  '12:00',
+  '10:30',
+  '12:30',
+  '11:30',
+  '10:00',
+] as const satisfies readonly LocalTime[]
 
 const bookingSeeds: readonly BookingSeed[] = [
   {
@@ -485,4 +490,8 @@ const bookingSeeds: readonly BookingSeed[] = [
   },
 ]
 
-export const mockBookings: readonly Booking[] = bookingSeeds
+export const mockBookings: readonly Booking[] = bookingSeeds.map((booking, index) => ({
+  ...booking,
+  checkInTime: CHECK_IN_TIMES[index % CHECK_IN_TIMES.length] ?? '15:00',
+  checkOutTime: CHECK_OUT_TIMES[index % CHECK_OUT_TIMES.length] ?? '11:00',
+}))

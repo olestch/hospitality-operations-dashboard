@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { Booking } from '@/modules/bookings/types/booking'
 import {
   bookingOverlapsRange,
+  bookingVisuallyOverlapsRange,
   bookingsConflict,
   calculateReservationSummary,
   createReservationViewData,
@@ -24,7 +25,9 @@ const booking: Booking = {
   guestCount: 2,
   source: 'Direct',
   checkIn: '2025-02-27',
+  checkInTime: '16:00',
   checkOut: '2025-03-03',
+  checkOutTime: '11:00',
   status: 'confirmed',
   totalAmount: 500,
   paidAmount: 250,
@@ -71,6 +74,10 @@ describe('booking geometry', () => {
     expect(getBookingSpan(booking, range)).toMatchObject({
       startColumn: 3,
       span: 4,
+      startFraction: 2 / 3,
+      endFraction: 11 / 24,
+      startOffset: 2 + 2 / 3,
+      endOffset: 6 + 11 / 24,
       clippedAtStart: false,
       clippedAtEnd: false,
     })
@@ -102,10 +109,17 @@ describe('booking geometry', () => {
     expect(getBookingSpan({ ...booking, status: 'cancelled' }, range)).toBeNull()
   })
 
-  it('excludes a booking that checks out at the range start', () => {
+  it('shows the partial checkout day at the range start without adding an occupied night', () => {
     const departing = { ...booking, checkIn: '2025-02-20', checkOut: range.start }
     expect(bookingOverlapsRange(departing, range)).toBe(false)
-    expect(getBookingSpan(departing, range)).toBeNull()
+    expect(bookingVisuallyOverlapsRange(departing, range)).toBe(true)
+    expect(getBookingSpan(departing, range)).toMatchObject({
+      startOffset: 0,
+      endOffset: 11 / 24,
+      span: 0,
+      clippedAtStart: true,
+    })
+    expect(calculateReservationSummary([rooms[0]!], [departing], range).occupiedRoomDays).toBe(0)
   })
 
   it('places bookings that start at either visible boundary', () => {
@@ -120,7 +134,7 @@ describe('booking geometry', () => {
   it('includes the final visible night when checkout is the day after the range', () => {
     expect(
       getBookingSpan({ ...booking, checkIn: '2025-03-03', checkOut: '2025-03-06' }, range),
-    ).toMatchObject({ startColumn: 7, span: 3, clippedAtEnd: false })
+    ).toMatchObject({ startColumn: 7, span: 3, clippedAtEnd: true, endOffset: 9 })
   })
 
   it('keeps a one-night booking visible', () => {
@@ -138,6 +152,46 @@ describe('booking geometry', () => {
       clippedAtStart: true,
       clippedAtEnd: true,
     })
+  })
+
+  it('uses proportional midnight, noon, and near-end-of-day boundaries', () => {
+    expect(
+      getBookingSpan(
+        {
+          ...booking,
+          checkIn: range.start,
+          checkInTime: '00:00',
+          checkOut: '2025-02-26',
+          checkOutTime: '12:00',
+        },
+        range,
+      ),
+    ).toMatchObject({ startOffset: 0, endOffset: 1.5, width: 1.5 })
+    expect(
+      getBookingSpan(
+        {
+          ...booking,
+          checkIn: range.start,
+          checkInTime: '23:59',
+          checkOut: '2025-02-26',
+          checkOutTime: '12:00',
+        },
+        range,
+      )?.startOffset,
+    ).toBeCloseTo(1439 / 1440, 6)
+  })
+
+  it('clips visual geometry to the full visible range', () => {
+    expect(
+      getBookingSpan(
+        {
+          ...booking,
+          checkIn: '2025-02-20',
+          checkOut: '2025-03-10',
+        },
+        range,
+      ),
+    ).toMatchObject({ startOffset: 0, endOffset: 9, width: 9 })
   })
 
   it('treats a reversed range as empty', () => {

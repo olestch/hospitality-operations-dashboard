@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { Booking } from '@/modules/bookings/types/booking'
 import type {
+  BookingSpan,
   ReservationGridRow,
   TimelineDay,
   TimelineMonthGroup,
 } from '@/modules/bookings/utils/reservationTimeline'
+import { formatLocalTime } from '@/modules/bookings/utils/bookingTime'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import type { RoomStatus } from '@/shared/types/property'
 
@@ -20,6 +22,22 @@ function roomBadge(status: RoomStatus): 'neutral' | 'success' | 'warning' | 'dan
   if (status === 'maintenance') return 'warning'
   if (status === 'out-of-service') return 'danger'
   return 'neutral'
+}
+
+function roomStatusLabel(status: RoomStatus): string {
+  return status.replace(/-/g, ' ')
+}
+
+function bookingStyle(span: BookingSpan): Record<string, string> {
+  return {
+    '--booking-start': String(span.startOffset),
+    '--booking-width': String(span.width),
+  }
+}
+
+function bookingLabel(span: BookingSpan, roomNumber: string): string {
+  const { booking } = span
+  return `${booking.guestName}, room ${roomNumber}, ${booking.status}, ${booking.source}, ${booking.checkIn} at ${formatLocalTime(booking.checkInTime)} to ${booking.checkOut} at ${formatLocalTime(booking.checkOutTime)}`
 }
 </script>
 
@@ -63,12 +81,16 @@ function roomBadge(status: RoomStatus): 'neutral' | 'success' | 'warning' | 'dan
         :aria-labelledby="`reservation-room-${row.room.id}`"
       >
         <div class="room-column room-cell">
-          <div>
+          <div class="room-cell__identity">
             <h2 :id="`reservation-room-${row.room.id}`">{{ row.room.number }}</h2>
             <span>{{ row.room.name }}</span>
           </div>
-          <small>{{ row.room.type }} · {{ row.room.capacity }} guests</small>
-          <BaseBadge :variant="roomBadge(row.room.status)">{{ row.room.status }}</BaseBadge>
+          <div class="room-cell__meta">
+            <small>{{ row.room.type }} · {{ row.room.capacity }} guests</small>
+            <BaseBadge :variant="roomBadge(row.room.status)">{{
+              roomStatusLabel(row.room.status)
+            }}</BaseBadge>
+          </div>
         </div>
         <div class="timeline-track timeline-track--room">
           <span
@@ -91,12 +113,12 @@ function roomBadge(status: RoomStatus): 'neutral' | 'success' | 'warning' | 'dan
               { 'is-clipped-start': span.clippedAtStart, 'is-clipped-end': span.clippedAtEnd },
             ]"
             type="button"
-            :style="{ gridColumn: `${span.startColumn} / span ${span.span}` }"
-            :aria-label="`${span.booking.guestName}, room ${row.room.number}, ${span.booking.status}, ${span.booking.source}, ${span.booking.checkIn} to ${span.booking.checkOut}`"
+            :style="bookingStyle(span)"
+            :aria-label="bookingLabel(span, row.room.number)"
             @click="emit('select', span.booking)"
           >
-            <strong>{{ span.booking.guestName }}</strong
-            ><span>{{ span.booking.status }}</span>
+            <strong v-if="span.width >= 1.9">{{ span.booking.guestName }}</strong>
+            <span v-if="span.width >= 3.6">{{ span.booking.status }}</span>
           </button>
         </div>
       </section>
@@ -116,8 +138,8 @@ function roomBadge(status: RoomStatus): 'neutral' | 'success' | 'warning' | 'dan
   box-shadow: var(--shadow-sm);
 }
 .reservation-grid {
-  --day-width: 3.25rem;
-  --room-width: 14.5rem;
+  --day-width: 2.75rem;
+  --room-width: 13.25rem;
   min-width: calc(var(--room-width) + var(--day-count) * var(--day-width));
 }
 .timeline-line {
@@ -135,6 +157,7 @@ function roomBadge(status: RoomStatus): 'neutral' | 'success' | 'warning' | 'dan
   z-index: 3;
   border-right: 1px solid var(--color-border-strong);
   background: var(--color-surface);
+  box-shadow: var(--shadow-sticky-column);
 }
 .room-column--header {
   display: flex;
@@ -145,6 +168,7 @@ function roomBadge(status: RoomStatus): 'neutral' | 'success' | 'warning' | 'dan
   font-weight: var(--font-weight-bold);
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  background: var(--color-surface-subtle);
 }
 .room-column--subheader {
   display: flex;
@@ -152,6 +176,7 @@ function roomBadge(status: RoomStatus): 'neutral' | 'success' | 'warning' | 'dan
   padding: var(--space-2) var(--space-4);
   color: var(--color-text-muted);
   font-size: var(--font-size-xs);
+  background: var(--color-surface-subtle);
 }
 .timeline-months {
   border-bottom: 1px solid var(--color-border);
@@ -173,7 +198,7 @@ function roomBadge(status: RoomStatus): 'neutral' | 'success' | 'warning' | 'dan
   display: grid;
   place-items: center;
   gap: 1px;
-  min-height: 3.25rem;
+  min-height: 2.875rem;
   border-right: 1px solid var(--color-border);
   color: var(--color-text-muted);
   font-size: 0.6875rem;
@@ -186,7 +211,7 @@ function roomBadge(status: RoomStatus): 'neutral' | 'success' | 'warning' | 'dan
   background: var(--color-primary-soft);
 }
 .timeline-room {
-  min-height: 4.75rem;
+  min-height: 4rem;
   border-bottom: 1px solid var(--color-border);
 }
 .timeline-room:last-child {
@@ -195,14 +220,18 @@ function roomBadge(status: RoomStatus): 'neutral' | 'success' | 'warning' | 'dan
 .room-cell {
   display: grid;
   align-content: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
 }
-.room-cell > div {
+.room-cell__identity,
+.room-cell__meta {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-2);
   min-width: 0;
+}
+.room-cell__meta {
+  justify-content: space-between;
 }
 .room-cell h2 {
   margin: 0;
@@ -217,17 +246,23 @@ function roomBadge(status: RoomStatus): 'neutral' | 'success' | 'warning' | 'dan
   white-space: nowrap;
 }
 .room-cell small {
+  overflow: hidden;
   color: var(--color-text-muted);
   font-size: 0.6875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .room-cell :deep(.badge) {
+  flex: 0 0 auto;
   width: max-content;
   min-height: 1.25rem;
+  padding-inline: var(--space-2);
   font-size: 0.625rem;
+  text-transform: capitalize;
 }
 .timeline-track--room {
   position: relative;
-  grid-template-rows: 4.75rem;
+  grid-template-rows: 4rem;
 }
 .day-cell {
   grid-row: 1;
@@ -241,18 +276,23 @@ function roomBadge(status: RoomStatus): 'neutral' | 'success' | 'warning' | 'dan
   background: var(--color-surface-subtle);
 }
 .booking-bar {
-  grid-row: 1;
+  position: absolute;
+  top: 50%;
+  left: calc(var(--booking-start) * var(--day-width));
   z-index: 2;
-  align-self: center;
-  min-width: 0;
-  min-height: 2.75rem;
-  margin: 0 0.2rem;
+  width: calc(var(--booking-width) * var(--day-width));
+  min-width: 0.25rem;
+  height: 2.5rem;
   overflow: hidden;
-  padding: var(--space-1) var(--space-2);
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-3);
+  transform: translateY(-50%);
+  border: 1px solid;
+  border-radius: var(--radius-full);
   text-align: left;
   cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    filter 120ms ease;
 }
 .booking-bar strong,
 .booking-bar span {
@@ -265,8 +305,14 @@ function roomBadge(status: RoomStatus): 'neutral' | 'success' | 'warning' | 'dan
   font-size: var(--font-size-xs);
 }
 .booking-bar span {
-  margin-top: 2px;
   font-size: 0.625rem;
+  text-transform: capitalize;
+}
+.booking-bar:hover {
+  filter: brightness(0.97);
+}
+.booking-bar:focus-visible {
+  z-index: 4;
 }
 .booking-bar--confirmed {
   border-color: var(--color-primary-border);
@@ -274,12 +320,14 @@ function roomBadge(status: RoomStatus): 'neutral' | 'success' | 'warning' | 'dan
   color: var(--color-primary-hover);
 }
 .booking-bar--checked-in {
+  border-width: 2px;
   border-color: var(--color-success-border);
   background: var(--color-success-soft);
   color: var(--color-success);
 }
 .booking-bar--checked-out {
   border-color: var(--color-border-strong);
+  border-style: dashed;
   background: var(--color-surface-subtle);
   color: var(--color-text);
 }
@@ -295,7 +343,13 @@ function roomBadge(status: RoomStatus): 'neutral' | 'success' | 'warning' | 'dan
 }
 @media (max-width: 64rem) {
   .reservation-grid {
-    --room-width: 12rem;
+    --room-width: 11.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .booking-bar {
+    transition: none;
   }
 }
 </style>

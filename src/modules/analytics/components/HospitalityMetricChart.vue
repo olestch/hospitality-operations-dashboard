@@ -2,7 +2,7 @@
 import type { ApexAxisChartSeries, ApexOptions } from 'apexcharts'
 import { computed, defineAsyncComponent } from 'vue'
 
-import { CHART_THEME } from '@/shared/charts/chartTheme'
+import { CHART_THEME, createTemporalAreaFill } from '@/shared/charts/chartTheme'
 
 import type { HospitalityMetricKey, RevenueMetric } from '@/modules/analytics/types/revenue'
 import { DEMO_CURRENCY } from '@/mocks/demoPeriod'
@@ -52,9 +52,10 @@ const options = computed<ApexOptions>(() => ({
   },
   colors: [CHART_THEME.primary],
   dataLabels: { enabled: false },
+  fill: createTemporalAreaFill(),
   grid: { borderColor: CHART_THEME.border, strokeDashArray: 4, padding: { left: 8, right: 8 } },
   markers: { size: props.metrics.length <= 7 ? 3 : 0, hover: { size: 4 } },
-  stroke: { curve: 'straight', width: 2.5 },
+  stroke: { curve: 'smooth', width: 2.5 },
   tooltip: { y: { formatter: formatMetric } },
   xaxis: {
     categories: props.metrics.map((metric) =>
@@ -88,7 +89,7 @@ function formatMetric(value: number): string {
       Daily {{ metricLabel.toLowerCase() }} across {{ periodLabel.toLowerCase() }}.
       {{ metrics.length }} daily values are represented in the chart.
     </figcaption>
-    <VueApexCharts type="line" height="340" :options="options" :series="series" />
+    <VueApexCharts type="area" height="340" :options="options" :series="series" />
   </figure>
 </template>
 

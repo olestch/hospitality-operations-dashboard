@@ -2,7 +2,7 @@
 import type { ApexAxisChartSeries, ApexOptions } from 'apexcharts'
 import { computed, defineAsyncComponent } from 'vue'
 
-import { CHART_THEME } from '@/shared/charts/chartTheme'
+import { CHART_THEME, createTemporalAreaFill } from '@/shared/charts/chartTheme'
 
 import type { RevenueMetric } from '@/modules/analytics/types/revenue'
 import { DEMO_CURRENCY } from '@/mocks/demoPeriod'
@@ -32,6 +32,7 @@ const options = computed<ApexOptions>(() => ({
   },
   colors: [CHART_THEME.primary],
   dataLabels: { enabled: false },
+  fill: createTemporalAreaFill(),
   grid: { borderColor: CHART_THEME.border, strokeDashArray: 4, padding: { left: 8, right: 8 } },
   markers: { size: 0, hover: { size: 4 } },
   stroke: { curve: 'smooth', width: 3 },
@@ -62,7 +63,7 @@ const options = computed<ApexOptions>(() => ({
     <figcaption id="revenue-chart-title" class="revenue-chart__caption">
       Daily revenue for the 30 days ending on the fixed demo date.
     </figcaption>
-    <VueApexCharts type="line" height="300" :options="options" :series="series" />
+    <VueApexCharts type="area" height="300" :options="options" :series="series" />
   </figure>
 </template>
 

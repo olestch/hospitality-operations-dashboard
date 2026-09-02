@@ -6,7 +6,7 @@ import { getBookings } from '@/modules/bookings/api/bookingsRepository'
 import type { Booking, BookingSource, BookingStatus } from '@/modules/bookings/types/booking'
 import {
   addDays,
-  bookingOverlapsRange,
+  bookingVisuallyOverlapsRange,
   calculateReservationSummary,
   createReservationGrid,
   createReservationViewData,
@@ -62,7 +62,7 @@ export const useBookingsStore = defineStore('bookings', () => {
   )
   const visibleBookings = computed(() =>
     reservationView.value.renderedBookings
-      .filter((booking) => bookingOverlapsRange(booking, visibleRange.value))
+      .filter((booking) => bookingVisuallyOverlapsRange(booking, visibleRange.value))
       .sort((first, second) => first.checkIn.localeCompare(second.checkIn)),
   )
   const summary = computed(() =>

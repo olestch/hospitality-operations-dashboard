@@ -1,5 +1,6 @@
 export type BookingStatus = 'confirmed' | 'checked-in' | 'checked-out' | 'cancelled'
 export type BookingSource = 'Direct' | 'Booking.com' | 'Expedia' | 'Corporate'
+export type LocalTime = `${number}${number}:${number}${number}`
 
 export interface Booking {
   id: string
@@ -9,7 +10,9 @@ export interface Booking {
   guestCount: number
   source: BookingSource
   checkIn: string
+  checkInTime: LocalTime
   checkOut: string
+  checkOutTime: LocalTime
   status: BookingStatus
   totalAmount: number
   paidAmount: number

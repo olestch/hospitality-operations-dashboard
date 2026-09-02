@@ -9,6 +9,11 @@ import ReservationGrid from '@/modules/bookings/components/ReservationGrid.vue'
 import ReservationSummaryStrip from '@/modules/bookings/components/ReservationSummaryStrip.vue'
 import { useBookingsStore } from '@/modules/bookings/stores/bookingsStore'
 import type { Booking, BookingSource, BookingStatus } from '@/modules/bookings/types/booking'
+import {
+  ALL_BOOKING_FILTERS,
+  fromBookingFilterModel,
+  toBookingFilterModel,
+} from '@/modules/bookings/utils/bookingFilters'
 import type { SelectOption, SelectValue } from '@/shared/ui/BaseSelect.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseCard from '@/shared/ui/BaseCard.vue'
@@ -54,33 +59,34 @@ const statusLabels: Record<(typeof bookingStatuses)[number], string> = {
   'checked-in': 'Checked in',
   'checked-out': 'Checked out',
 }
-const statusOptions: readonly SelectOption[] = bookingStatuses.map((status) => ({
-  label: statusLabels[status],
-  value: status,
-}))
-const sourceOptions: readonly SelectOption[] = bookingSources.map((source) => ({
-  label: source,
-  value: source,
-}))
-const roomTypeOptions = computed<readonly SelectOption[]>(() =>
-  roomTypes.value.map((type) => ({ label: type, value: type })),
-)
+const statusOptions: readonly SelectOption[] = [
+  { label: 'All active statuses', value: ALL_BOOKING_FILTERS },
+  ...bookingStatuses.map((status) => ({ label: statusLabels[status], value: status })),
+]
+const sourceOptions: readonly SelectOption[] = [
+  { label: 'All sources', value: ALL_BOOKING_FILTERS },
+  ...bookingSources.map((source) => ({ label: source, value: source })),
+]
+const roomTypeOptions = computed<readonly SelectOption[]>(() => [
+  { label: 'All room types', value: ALL_BOOKING_FILTERS },
+  ...roomTypes.value.map((type) => ({ label: type, value: type })),
+])
 const statusModel = computed<SelectValue | null>({
-  get: () => statusFilter.value,
+  get: () => toBookingFilterModel(statusFilter.value),
   set: (value) => {
-    statusFilter.value = bookingStatuses.find((status) => status === value) ?? null
+    statusFilter.value = fromBookingFilterModel(value, bookingStatuses)
   },
 })
 const sourceModel = computed<SelectValue | null>({
-  get: () => sourceFilter.value,
+  get: () => toBookingFilterModel(sourceFilter.value),
   set: (value) => {
-    sourceFilter.value = bookingSources.find((source) => source === value) ?? null
+    sourceFilter.value = fromBookingFilterModel(value, bookingSources)
   },
 })
 const roomTypeModel = computed<SelectValue | null>({
-  get: () => roomTypeFilter.value,
+  get: () => toBookingFilterModel(roomTypeFilter.value),
   set: (value) => {
-    roomTypeFilter.value = typeof value === 'string' ? value : null
+    roomTypeFilter.value = fromBookingFilterModel(value, roomTypes.value)
   },
 })
 const rangeFormatter = new Intl.DateTimeFormat('en', {
@@ -149,30 +155,15 @@ function closeBooking(): void {
       </div>
 
       <div class="filter-row" aria-label="Reservation filters">
-        <BaseSelect
-          v-model="statusModel"
-          label="Status"
-          :options="statusOptions"
-          placeholder="All active statuses"
-        />
-        <BaseSelect
-          v-model="sourceModel"
-          label="Source"
-          :options="sourceOptions"
-          placeholder="All sources"
-        />
-        <BaseSelect
-          v-model="roomTypeModel"
-          label="Room type"
-          :options="roomTypeOptions"
-          placeholder="All room types"
-        />
+        <BaseSelect v-model="statusModel" label="Status" :options="statusOptions" />
+        <BaseSelect v-model="sourceModel" label="Source" :options="sourceOptions" />
+        <BaseSelect v-model="roomTypeModel" label="Room type" :options="roomTypeOptions" />
         <BaseButton
           variant="ghost"
           size="small"
           :disabled="!hasActiveFilters"
           @click="bookingsStore.resetFilters"
-          >Clear filters</BaseButton
+          >Reset filters</BaseButton
         >
       </div>
     </BaseCard>

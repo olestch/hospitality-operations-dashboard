@@ -1,5 +1,5 @@
 import { mockBookings } from '@/mocks/data/bookings'
-import { findBookingConflicts } from '@/modules/bookings/utils/reservationTimeline'
+import { validateBookingData } from '@/modules/bookings/utils/validateBookingData'
 import { mockInspectionDetails, mockInspections } from '@/mocks/data/inspections'
 import { mockInventory } from '@/mocks/data/inventory'
 import { mockProperties, mockRooms } from '@/mocks/data/properties'
@@ -14,7 +14,6 @@ function assert(condition: boolean, message: string): asserts condition {
 
 export function validateMockData(): void {
   const propertyIds = new Set(mockProperties.map((property) => property.id))
-  const roomsById = new Map(mockRooms.map((room) => [room.id, room]))
 
   for (const property of mockProperties) {
     const actualRoomCount = mockRooms.filter((room) => room.propertyId === property.id).length
@@ -25,21 +24,7 @@ export function validateMockData(): void {
     assert(propertyIds.has(room.propertyId), `${room.id} references an unknown property`)
   }
 
-  for (const booking of mockBookings) {
-    const room = roomsById.get(booking.roomId)
-    assert(propertyIds.has(booking.propertyId), `${booking.id} references an unknown property`)
-    assert(room !== undefined, `${booking.id} references an unknown room`)
-    assert(room.propertyId === booking.propertyId, `${booking.id} room belongs to another property`)
-    assert(booking.checkIn < booking.checkOut, `${booking.id} has an invalid date range`)
-    assert(booking.paidAmount <= booking.totalAmount, `${booking.id} paid amount exceeds total`)
-  }
-
-  for (const conflict of findBookingConflicts(mockBookings)) {
-    assert(
-      false,
-      `${conflict.first.id} overlaps ${conflict.second.id} in room ${conflict.first.roomId}`,
-    )
-  }
+  validateBookingData(mockBookings, mockRooms, propertyIds)
 
   for (const metric of mockRevenueMetrics) {
     assert(

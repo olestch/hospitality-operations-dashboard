@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 
 import type { Booking } from '@/modules/bookings/types/booking'
+import { formatLocalTime } from '@/modules/bookings/utils/bookingTime'
 import { daysBetween } from '@/modules/bookings/utils/reservationTimeline'
 import { DEMO_CURRENCY } from '@/mocks/demoPeriod'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
@@ -47,8 +48,12 @@ function formatDate(value: string): string {
           <dd>{{ roomName }}</dd>
         </div>
         <div>
-          <dt>Stay</dt>
-          <dd>{{ formatDate(booking.checkIn) }} – {{ formatDate(booking.checkOut) }}</dd>
+          <dt>Check-in</dt>
+          <dd>{{ formatDate(booking.checkIn) }} · {{ formatLocalTime(booking.checkInTime) }}</dd>
+        </div>
+        <div>
+          <dt>Check-out</dt>
+          <dd>{{ formatDate(booking.checkOut) }} · {{ formatLocalTime(booking.checkOutTime) }}</dd>
         </div>
         <div>
           <dt>Nights</dt>

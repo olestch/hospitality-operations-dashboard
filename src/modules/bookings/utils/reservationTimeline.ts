@@ -1,4 +1,5 @@
 import type { Booking, BookingSource, BookingStatus } from '@/modules/bookings/types/booking'
+import { bookingDateTimeKey, localTimeToFraction } from '@/modules/bookings/utils/bookingTime'
 import type { Room } from '@/shared/types/property'
 
 const DAY_MS = 86_400_000
@@ -26,6 +27,11 @@ export interface BookingSpan {
   booking: Booking
   startColumn: number
   span: number
+  startFraction: number
+  endFraction: number
+  startOffset: number
+  endOffset: number
+  width: number
   clippedAtStart: boolean
   clippedAtEnd: boolean
 }
@@ -134,13 +140,25 @@ export function bookingOverlapsRange(booking: Booking, range: DateRange): boolea
   )
 }
 
+export function bookingVisuallyOverlapsRange(booking: Booking, range: DateRange): boolean {
+  if (booking.status === 'cancelled' || !isValidDateRange(range)) return false
+  const visibleDayCount = daysBetween(range.start, range.end) + 1
+  const startOffset = getBookingBoundaryOffset(booking.checkIn, booking.checkInTime, range.start)
+  const endOffset = getBookingBoundaryOffset(booking.checkOut, booking.checkOutTime, range.start)
+  return endOffset > 0 && startOffset < visibleDayCount
+}
+
 export function bookingsConflict(first: Booking, second: Booking): boolean {
+  const firstStart = bookingDateTimeKey(first.checkIn, first.checkInTime)
+  const firstEnd = bookingDateTimeKey(first.checkOut, first.checkOutTime)
+  const secondStart = bookingDateTimeKey(second.checkIn, second.checkInTime)
+  const secondEnd = bookingDateTimeKey(second.checkOut, second.checkOutTime)
   return (
     first.roomId === second.roomId &&
     first.status !== 'cancelled' &&
     second.status !== 'cancelled' &&
-    first.checkIn < second.checkOut &&
-    second.checkIn < first.checkOut
+    firstStart < secondEnd &&
+    secondStart < firstEnd
   )
 }
 
@@ -152,7 +170,9 @@ export function findBookingConflicts(bookings: readonly Booking[]): BookingConfl
 
   for (const roomBookings of bookingsByRoom.values()) {
     const sortedBookings = [...roomBookings].sort((first, second) =>
-      first.checkIn.localeCompare(second.checkIn),
+      bookingDateTimeKey(first.checkIn, first.checkInTime).localeCompare(
+        bookingDateTimeKey(second.checkIn, second.checkInTime),
+      ),
     )
     for (let firstIndex = 0; firstIndex < sortedBookings.length; firstIndex += 1) {
       const first = sortedBookings[firstIndex]
@@ -163,7 +183,12 @@ export function findBookingConflicts(bookings: readonly Booking[]): BookingConfl
         secondIndex += 1
       ) {
         const second = sortedBookings[secondIndex]
-        if (!second || second.checkIn >= first.checkOut) break
+        if (
+          !second ||
+          bookingDateTimeKey(second.checkIn, second.checkInTime) >=
+            bookingDateTimeKey(first.checkOut, first.checkOutTime)
+        )
+          break
         if (bookingsConflict(first, second)) conflicts.push({ first, second })
       }
     }
@@ -173,18 +198,44 @@ export function findBookingConflicts(bookings: readonly Booking[]): BookingConfl
 }
 
 export function getBookingSpan(booking: Booking, range: DateRange): BookingSpan | null {
-  if (!bookingOverlapsRange(booking, range)) return null
+  if (!bookingVisuallyOverlapsRange(booking, range)) return null
+  const visibleDayCount = daysBetween(range.start, range.end) + 1
+  const bookingStartOffset = getBookingBoundaryOffset(
+    booking.checkIn,
+    booking.checkInTime,
+    range.start,
+  )
+  const bookingEndOffset = getBookingBoundaryOffset(
+    booking.checkOut,
+    booking.checkOutTime,
+    range.start,
+  )
+  const startOffset = Math.max(bookingStartOffset, 0)
+  const endOffset = Math.min(bookingEndOffset, visibleDayCount)
+  if (endOffset <= startOffset) return null
+
   const rangeEndExclusive = addDays(range.end, 1)
   const clippedStart = booking.checkIn < range.start ? range.start : booking.checkIn
   const clippedEnd = booking.checkOut > rangeEndExclusive ? rangeEndExclusive : booking.checkOut
+  const clippedAtStart = bookingStartOffset < 0
+  const clippedAtEnd = bookingEndOffset > visibleDayCount
 
   return {
     booking,
     startColumn: daysBetween(range.start, clippedStart) + 1,
-    span: daysBetween(clippedStart, clippedEnd),
-    clippedAtStart: booking.checkIn < range.start,
-    clippedAtEnd: booking.checkOut > rangeEndExclusive,
+    span: Math.max(daysBetween(clippedStart, clippedEnd), 0),
+    startFraction: clippedAtStart ? 0 : localTimeToFraction(booking.checkInTime),
+    endFraction: clippedAtEnd ? 1 : localTimeToFraction(booking.checkOutTime),
+    startOffset,
+    endOffset,
+    width: endOffset - startOffset,
+    clippedAtStart,
+    clippedAtEnd,
   }
+}
+
+function getBookingBoundaryOffset(date: string, time: string, rangeStart: string): number {
+  return daysBetween(rangeStart, date) + localTimeToFraction(time)
 }
 
 export function indexBookingsByRoom(bookings: readonly Booking[]): Map<string, Booking[]> {

@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 
 import type { Booking, BookingStatus } from '@/modules/bookings/types/booking'
+import { formatLocalTime } from '@/modules/bookings/utils/bookingTime'
 import type { ReservationGridRow } from '@/modules/bookings/utils/reservationTimeline'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import EmptyState from '@/shared/ui/EmptyState.vue'
@@ -62,11 +63,15 @@ function badge(status: BookingStatus): 'neutral' | 'success' | 'warning' | 'dang
       >
         <span class="mobile-bookings__main"
           ><strong>{{ booking.guestName }}</strong
-          ><small>{{ roomNames.get(booking.roomId) ?? 'Unknown room' }}</small></span
+          ><small>{{ roomNames.get(booking.roomId) ?? 'Unknown room' }}</small
+          ><small>Arrival · {{ formatLocalTime(booking.checkInTime) }}</small></span
         >
         <span class="mobile-bookings__meta"
           ><BaseBadge :variant="badge(booking.status)">{{ booking.status }}</BaseBadge
-          ><small>to {{ formatDate(booking.checkOut) }}</small></span
+          ><small
+            >to {{ formatDate(booking.checkOut) }} ·
+            {{ formatLocalTime(booking.checkOutTime) }}</small
+          ></span
         >
       </button>
     </section>
@@ -132,5 +137,6 @@ function badge(status: BookingStatus): 'neutral' | 'success' | 'warning' | 'dang
 .mobile-bookings__meta {
   flex: 0 0 auto;
   justify-items: end;
+  text-align: right;
 }
 </style>
