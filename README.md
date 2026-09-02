@@ -4,6 +4,8 @@ A responsive hospitality operations dashboard built as a frontend portfolio proj
 demonstrating reservation planning, operational analytics, quality inspections, inventory
 monitoring, and property-level workspace management.
 
+**Live Demo:** [https://hospitality-operations-dashboard.netlify.app/](https://hospitality-operations-dashboard.netlify.app/)
+
 All properties, people, operational records, and metrics are fictional. The application uses a
 deterministic local data provider; it has no backend, authentication, or connection to a real hotel
 or company.
